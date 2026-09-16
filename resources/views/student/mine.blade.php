@@ -6,7 +6,7 @@
         @else
             <table>
                 <thead>
-                    <tr><th>Date</th><th>Time</th><th>Site</th><th>Status</th><th>Notes</th></tr>
+                    <tr><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th>Status</th><th>Notes</th></tr>
                 </thead>
                 <tbody>
                     @foreach ($list as $r)
@@ -14,6 +14,7 @@
                             <td>{{ \Carbon\Carbon::parse($r->date)->format('d M Y') }}</td>
                             <td>{{ $r->time }}</td>
                             <td>{{ $r->site }}</td>
+                            <td class="muted">{{ $r->department }}</td>
                             <td><span class="pill {{ $r->status }}">{{ $r->status }}</span></td>
                             <td class="muted">{{ $r->notes }}</td>
                         </tr>

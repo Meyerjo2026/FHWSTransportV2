@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClinicalSite;
 use App\Models\Quote;
 use App\Models\TripRequest;
 use App\Support\TransportOptions;
@@ -11,6 +12,33 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
+    public function sites()
+    {
+        return view('admin.sites', [
+            'user' => Auth::user(),
+            'sites' => ClinicalSite::orderBy('name')->get(),
+        ]);
+    }
+
+    public function storeSite(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:clinical_sites,name'],
+            'address' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        ClinicalSite::create($data);
+
+        return back()->with('success', "Added clinical site: {$data['name']}.");
+    }
+
+    public function toggleSite(ClinicalSite $site)
+    {
+        $site->update(['active' => ! $site->active]);
+
+        return back();
+    }
+
     public function consolidate()
     {
         $approved = TripRequest::whereIn('status', ['approved', 'finalised'])->get();
@@ -87,7 +115,7 @@ class AdminController extends Controller
         $total = $groups->sum(fn ($g) => $data['rate'] * $g['items']->count());
 
         $quote = Quote::create([
-            'ref' => 'QT'.(1000 + Quote::count() + 1),
+            'ref' => 'RFQ'.(1000 + Quote::count() + 1),
             'period' => $data['period'],
             'rate' => $data['rate'],
             'total' => $total,

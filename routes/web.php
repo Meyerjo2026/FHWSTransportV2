@@ -52,6 +52,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/quotes', [AdminController::class, 'quotesIndex']);
     Route::post('/quotes', [AdminController::class, 'generateQuote']);
     Route::get('/quotes/{quote}', [AdminController::class, 'quoteShow']);
+    Route::get('/sites', [AdminController::class, 'sites']);
+    Route::post('/sites', [AdminController::class, 'storeSite']);
+    Route::post('/sites/{site}/toggle', [AdminController::class, 'toggleSite']);
 });
 
 require __DIR__.'/auth.php';

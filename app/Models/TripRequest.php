@@ -11,10 +11,13 @@ class TripRequest extends Model
         'student_name',
         'student_email',
         'student_number',
+        'clinical_site_id',
         'site',
         'date',
         'time',
         'notes',
+        'department',
+        'qualification',
         'status',
         'source',
         'uploaded_by',
@@ -24,6 +27,11 @@ class TripRequest extends Model
     public function student()
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function clinicalSite()
+    {
+        return $this->belongsTo(ClinicalSite::class);
     }
 
     public function quote()

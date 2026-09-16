@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClinicalSite;
 use App\Models\TripRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +49,8 @@ class StaffController extends Controller
         $rows = array_map('str_getcsv', file($request->file('file')->getRealPath()));
         $header = array_map(fn ($h) => strtolower(trim($h)), array_shift($rows) ?? []);
 
+        $sitesByName = ClinicalSite::pluck('id', 'name');
+
         $count = 0;
         foreach ($rows as $row) {
             if (! $row || count($row) < count($header)) {
@@ -63,9 +66,12 @@ class StaffController extends Controller
                 'student_name' => $assoc['name'] ?? 'Unknown',
                 'student_email' => $assoc['email'] ?? '',
                 'student_number' => $assoc['number'] ?? '',
+                'clinical_site_id' => $sitesByName[$assoc['site']] ?? null,
                 'site' => $assoc['site'],
                 'date' => $assoc['date'],
                 'time' => $assoc['time'],
+                'department' => $assoc['department'] ?? null,
+                'qualification' => $assoc['qualification'] ?? null,
                 'notes' => $assoc['notes'] ?? null,
                 'status' => 'approved',
                 'source' => 'bulk',

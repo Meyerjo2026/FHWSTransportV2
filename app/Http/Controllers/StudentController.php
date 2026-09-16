@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClinicalSite;
 use App\Models\TripRequest;
 use App\Support\TransportOptions;
 use Illuminate\Http\Request;
@@ -13,36 +14,44 @@ class StudentController extends Controller
     {
         return view('student.request', [
             'user' => Auth::user(),
-            'sites' => TransportOptions::SITES,
+            'sites' => ClinicalSite::where('active', true)->orderBy('name')->get(),
             'timeSlots' => TransportOptions::TIME_SLOTS,
+            'departments' => TransportOptions::DEPARTMENTS,
+            'qualifications' => TransportOptions::QUALIFICATIONS,
         ]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'site' => ['required', 'string'],
+            'clinical_site_id' => ['required', 'exists:clinical_sites,id'],
             'date' => ['required', 'date'],
             'time' => ['required', 'string'],
+            'department' => ['required', 'string'],
+            'qualification' => ['required', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
 
         $user = Auth::user();
+        $site = ClinicalSite::findOrFail($data['clinical_site_id']);
 
         TripRequest::create([
             'student_id' => $user->id,
             'student_name' => $user->name,
             'student_email' => $user->email,
             'student_number' => $user->number,
-            'site' => $data['site'],
+            'clinical_site_id' => $site->id,
+            'site' => $site->name,
             'date' => $data['date'],
             'time' => $data['time'],
+            'department' => $data['department'],
+            'qualification' => $data['qualification'],
             'notes' => $data['notes'] ?? null,
             'status' => 'pending',
             'source' => 'manual',
         ]);
 
-        return redirect('/student')->with('success', "Request submitted: {$data['site']} on {$data['date']} ({$data['time']}). Awaiting approval.");
+        return redirect('/student')->with('success', "Request submitted: {$site->name} on {$data['date']} ({$data['time']}). Awaiting approval.");
     }
 
     public function mine()

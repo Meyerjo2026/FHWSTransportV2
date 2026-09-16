@@ -1,5 +1,5 @@
 @php
-$tabs = ['/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject', '/admin/finalise' => 'Finalise Trips', '/admin/quotes' => 'Generate Quotes'];
+$tabs = ['/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject', '/admin/finalise' => 'Finalise Trips', '/admin/quotes' => 'Create RFQ', '/admin/sites' => 'Clinical Sites'];
 @endphp
 <x-shell :user="$user" :active="'/admin/finalise'" :tabs="$tabs">
     <div class="card">
@@ -11,7 +11,7 @@ $tabs = ['/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject',
             <form method="POST" action="/admin/finalise">
                 @csrf
                 <table>
-                    <thead><tr><th></th><th>Date</th><th>Site</th><th>Time</th><th>Count</th></tr></thead>
+                    <thead><tr><th></th><th>Date</th><th>Site</th><th>Time</th><th>Trip</th><th>Count</th></tr></thead>
                     <tbody>
                         @foreach ($groups as $g)
                             <tr>
@@ -19,6 +19,7 @@ $tabs = ['/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject',
                                 <td>{{ \Carbon\Carbon::parse($g['date'])->format('d M Y') }}</td>
                                 <td>{{ $g['site'] }}</td>
                                 <td>{{ $g['time'] }}</td>
+                                <td>{{ $g['tripParts'] > 1 ? "Trip {$g['tripPart']} of {$g['tripParts']}" : '—' }}</td>
                                 <td>{{ $g['items']->count() }}</td>
                             </tr>
                         @endforeach

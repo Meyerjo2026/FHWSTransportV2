@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\ClinicalSite;
 use App\Models\User;
+use App\Support\TransportOptions;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -31,6 +33,10 @@ class DatabaseSeeder extends Seeder
                     'password' => bcrypt($u['password']),
                 ]
             );
+        }
+
+        foreach (TransportOptions::SITE_SEED as $name => $address) {
+            ClinicalSite::firstOrCreate(['name' => $name], ['address' => $address]);
         }
     }
 }

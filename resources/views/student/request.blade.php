@@ -22,17 +22,38 @@
             </div>
             <div class="grid">
                 <div class="field">
-                    <label>Site</label>
-                    <select name="site" required>
-                        <option value="" disabled selected>Select a site</option>
+                    <label>Clinical site</label>
+                    <select name="clinical_site_id" id="clinical_site_id" required onchange="document.getElementById('site-address').textContent = this.options[this.selectedIndex].dataset.address || '';">
+                        <option value="" disabled selected>Select a clinical site</option>
                         @foreach ($sites as $site)
-                            <option value="{{ $site }}">{{ $site }}</option>
+                            <option value="{{ $site->id }}" data-address="{{ $site->address }}">{{ $site->name }}</option>
                         @endforeach
                     </select>
+                    <div class="hint" id="site-address"></div>
                 </div>
                 <div class="field">
                     <label>Date</label>
                     <input name="date" type="date" required>
+                </div>
+            </div>
+            <div class="grid">
+                <div class="field">
+                    <label>Department</label>
+                    <select name="department" required>
+                        <option value="" disabled selected>Select a department</option>
+                        @foreach ($departments as $dept)
+                            <option value="{{ $dept }}">{{ $dept }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Qualification (studying)</label>
+                    <select name="qualification" required>
+                        <option value="" disabled selected>Select a qualification</option>
+                        @foreach ($qualifications as $qual)
+                            <option value="{{ $qual }}">{{ $qual }}</option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
             <div class="field">

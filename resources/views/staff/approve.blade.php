@@ -6,7 +6,7 @@
         @else
             <table>
                 <thead>
-                    <tr><th>Student</th><th>Contact</th><th>Date</th><th>Time</th><th>Site</th><th></th></tr>
+                    <tr><th>Student</th><th>Contact</th><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th></th></tr>
                 </thead>
                 <tbody>
                     @foreach ($pending as $r)
@@ -16,6 +16,7 @@
                             <td>{{ \Carbon\Carbon::parse($r->date)->format('d M Y') }}</td>
                             <td>{{ $r->time }}</td>
                             <td>{{ $r->site }}</td>
+                            <td class="muted">{{ $r->department }}</td>
                             <td class="row-actions">
                                 <form method="POST" action="/requests/{{ $r->id }}/status">
                                     @csrf
