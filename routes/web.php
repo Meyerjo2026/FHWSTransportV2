@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\JourneyController;
 use App\Http\Controllers\Admin\MapController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\ForcePasswordController;
@@ -71,6 +72,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])->prefix('admin')->
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/export', [DashboardController::class, 'export']);
     Route::get('/map', [MapController::class, 'index']);
+    Route::get('/journeys', [JourneyController::class, 'index']);
+    Route::post('/journeys', [JourneyController::class, 'store']);
+    Route::delete('/journeys/{journey}', [JourneyController::class, 'destroy']);
 });
 
 require __DIR__.'/auth.php';

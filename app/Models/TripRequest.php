@@ -22,6 +22,7 @@ class TripRequest extends Model
         'source',
         'uploaded_by',
         'quote_id',
+        'journey_id',
     ];
 
     public function student()
@@ -37,5 +38,10 @@ class TripRequest extends Model
     public function quote()
     {
         return $this->belongsTo(Quote::class);
+    }
+
+    public function journey()
+    {
+        return $this->belongsTo(Journey::class);
     }
 }
