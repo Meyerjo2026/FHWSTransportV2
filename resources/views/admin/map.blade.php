@@ -104,7 +104,8 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                 '<strong>' + m.name + '</strong><br>' +
                 (m.address ? m.address + '<br>' : '') +
                 m.count + ' student' + (m.count === 1 ? '' : 's') +
-                (m.departments.length ? '<br><span style="color:#6b6478;">' + m.departments.join(', ') + '</span>' : '')
+                (m.departments.length ? '<br><span style="color:#6b6478;">' + m.departments.join(', ') + '</span>' : '') +
+                '<br><a href="https://www.google.com/maps/search/?api=1&query=' + m.lat + ',' + m.lng + '" target="_blank" rel="noopener">Verify on Google Maps &rarr;</a>'
             );
             L.polyline([[pickup.lat, pickup.lng], [m.lat, m.lng]], {
                 color: '#8e3a92', weight: 1, opacity: 0.35, dashArray: '4,5',

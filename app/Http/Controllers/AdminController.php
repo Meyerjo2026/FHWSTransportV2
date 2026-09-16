@@ -14,9 +14,23 @@ class AdminController extends Controller
 {
     public function sites()
     {
+        $sites = ClinicalSite::orderBy('name')->get();
+
+        // Sites sharing the exact same coordinates are usually a sign the
+        // location was approximated at suburb level (see
+        // TransportOptions::SITE_SEED) rather than geocoded individually —
+        // flagged here so an admin knows which pins most need a manual
+        // Google Maps check.
+        $duplicateCoordKeys = $sites
+            ->filter(fn ($s) => $s->lat !== null)
+            ->groupBy(fn ($s) => round($s->lat, 5).','.round($s->lng, 5))
+            ->filter(fn ($group) => $group->count() > 1)
+            ->keys();
+
         return view('admin.sites', [
             'user' => Auth::user(),
-            'sites' => ClinicalSite::orderBy('name')->get(),
+            'sites' => $sites,
+            'duplicateCoordKeys' => $duplicateCoordKeys,
         ]);
     }
 
