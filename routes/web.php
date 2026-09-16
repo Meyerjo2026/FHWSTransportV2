@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MapController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
@@ -58,6 +59,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/sites/{site}/toggle', [AdminController::class, 'toggleSite']);
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/export', [DashboardController::class, 'export']);
+    Route::get('/map', [MapController::class, 'index']);
 });
 
 require __DIR__.'/auth.php';

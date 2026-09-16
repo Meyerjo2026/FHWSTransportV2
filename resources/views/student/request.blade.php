@@ -20,6 +20,10 @@
                 <label>Student number</label>
                 <input value="{{ $user->number }}" disabled>
             </div>
+            <div class="field">
+                <label>Pickup point</label>
+                <input value="CPUT Bellville Campus" disabled>
+            </div>
             <div class="grid">
                 <div class="field">
                     <label>Clinical site</label>
@@ -87,7 +91,7 @@
             </div>
             <div class="field">
                 <label>Notes (optional)</label>
-                <textarea name="notes" rows="2" placeholder="e.g. group of 2, pickup point details"></textarea>
+                <textarea name="notes" rows="2" placeholder="e.g. group of 2, special requirements"></textarea>
             </div>
             <button class="btn" type="submit">Submit request</button>
         </form>

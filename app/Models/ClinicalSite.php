@@ -9,6 +9,8 @@ class ClinicalSite extends Model
     protected $fillable = [
         'name',
         'address',
+        'lat',
+        'lng',
         'active',
     ];
 
@@ -16,6 +18,8 @@ class ClinicalSite extends Model
     {
         return [
             'active' => 'boolean',
+            'lat' => 'float',
+            'lng' => 'float',
         ];
     }
 
