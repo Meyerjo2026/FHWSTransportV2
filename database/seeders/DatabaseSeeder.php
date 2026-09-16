@@ -1,0 +1,36 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    use WithoutModelEvents;
+
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        $demo = [
+            ['name' => 'J Meyer', 'email' => 'admin@cput.ac.za', 'number' => '0210000000', 'password' => 'admin123', 'role' => 'admin'],
+            ['name' => 'N September', 'email' => 'staff@cput.ac.za', 'number' => '0210000001', 'password' => 'staff123', 'role' => 'staff'],
+            ['name' => 'Thandi Nkosi', 'email' => 'student@mycput.ac.za', 'number' => '0821234567', 'password' => 'student123', 'role' => 'student'],
+        ];
+
+        foreach ($demo as $u) {
+            User::firstOrCreate(
+                ['email' => $u['email']],
+                [
+                    'name' => $u['name'],
+                    'number' => $u['number'],
+                    'role' => $u['role'],
+                    'password' => bcrypt($u['password']),
+                ]
+            );
+        }
+    }
+}
