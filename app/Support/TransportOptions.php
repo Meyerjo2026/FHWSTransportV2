@@ -43,16 +43,40 @@ class TransportOptions
         'Human Nutrition & Dietetics',
     ];
 
+    /**
+     * Undergraduate qualifications offered by CPUT's Faculty of Health &
+     * Wellness Sciences (https://www.cput.ac.za/faculties/fhws/courses).
+     * Postgraduate qualifications (PG Dip, Master's, Doctorates) are
+     * intentionally excluded — this list is undergraduate-only.
+     */
     public const QUALIFICATIONS = [
-        'Higher Certificate in Ambulance Emergency Assistant',
-        'Diploma in Emergency Medical Care',
+        // Biomedical Sciences
+        'Higher Certificate in Biomedical Sciences',
+        'Bachelor of Health Sciences in Medical Laboratory Science (Extended Curriculum Programme)',
+        'Bachelor of Health Sciences in Medical Laboratory Science (Articulation)',
+        'Bachelor of Health Sciences in Medical Laboratory Science',
+        // Dental Sciences
+        'Higher Certificate in Dental Assisting',
+        // Emergency Medical Sciences
+        'Higher Certificate in Emergency Medical Care',
+        'Diploma in Emergency Care',
+        'Bachelor of Emergency Medical Care (Extended Curriculum Programme)',
         'Bachelor of Emergency Medical Care',
-        'Diploma in Nursing',
+        // Medical Imaging & Therapeutic Sciences
+        'Bachelor of Science in Diagnostic Radiography',
+        'Bachelor of Science in Diagnostic Ultrasound',
+        'Bachelor of Science in Nuclear Medicine Technology',
+        'Bachelor of Science in Radiation Therapy',
+        // Nursing Sciences
+        'Bachelor of Nursing (Extended Curriculum Programme)',
         'Bachelor of Nursing',
-        'Postgraduate Diploma in Nursing Education',
-        'Diploma in Medical Laboratory Sciences',
-        'Diploma in Radiography',
+        // Ophthalmic Sciences
+        'Bachelor of Health Sciences in Opticianry',
+        // Somatology
         'Diploma in Somatology',
+        'Advanced Diploma in Somatology',
+        // Non-diploma/degree study (Health and Wellness)
+        'Health and Wellness: Non-Diploma/Degree',
     ];
 
     public const DEFAULT_RATE = 673.28;
