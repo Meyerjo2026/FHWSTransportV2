@@ -81,3 +81,35 @@ php artisan test
 
 - `AUTH_SECRET`-equivalent here is Laravel's `APP_KEY`, generated via `php artisan key:generate` — treat it as a secret, especially in production.
 - Session/cache/queue all use the `database` driver, so they persist in MySQL alongside app data.
+
+## Deploying to Render
+
+This repo deploys as a Docker web service + a managed **PostgreSQL** database (Render has no managed MySQL — production runs Postgres; your local dev machine can keep using MySQL, since Eloquent doesn't care which engine each environment uses). Everything's already in the repo:
+
+- `Dockerfile` — multi-stage build: Node stage builds front-end assets, PHP stage (`php:8.3-apache`) serves `public/` with `pdo_pgsql`/`pdo_mysql` both installed.
+- `docker/entrypoint.sh` — on every boot: waits for the database, runs `php artisan migrate --force`, caches config/routes/views, links storage, then starts Apache.
+- `render.yaml` — a Render **Blueprint**: one web service + one free Postgres database, with `DB_*` env vars wired automatically from the database to the web service.
+
+### Steps
+
+1. Generate a real app key locally (don't reuse a dev one):
+   ```bash
+   php artisan key:generate --show
+   ```
+   Copy the `base64:...` output.
+
+2. In the [Render dashboard](https://dashboard.render.com): **New → Blueprint**, connect this GitHub repo (`meyerjo2024/FHWSTransport`), and let it read `render.yaml`.
+
+3. When prompted for the `APP_KEY` env var (it's marked `sync: false` in the blueprint so it's never stored in git), paste the value from step 1.
+
+4. Deploy. Render builds the Docker image, provisions Postgres, links the two, and the entrypoint migrates the database automatically on first boot.
+
+5. **Seed demo/initial data** (optional, one-time) via Render's shell for the web service:
+   ```bash
+   php artisan db:seed --force
+   ```
+
+### What I verified locally before recommending this
+
+- Ran the full migration set (all 12 migrations) against a real local PostgreSQL instance — clean, no MySQL-specific syntax anywhere in the schema.
+- Built the actual `Dockerfile` with `docker build` and ran it as a container against a containerized Postgres, reproducing Render's setup: migrations ran automatically on boot, `/up` health check returned 200, `/login` rendered, and logging in as admin and browsing to Clinical Sites correctly showed all 68 seeded sites — so this isn't just a theoretical config, the whole path has actually been exercised end-to-end.

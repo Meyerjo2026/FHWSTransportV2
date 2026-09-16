@@ -52,7 +52,10 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    // RENDER_EXTERNAL_URL is injected automatically by Render on every web
+    // service, so APP_URL is correct out of the box on a fresh deploy even
+    // before it's set explicitly in the dashboard.
+    'url' => env('APP_URL', env('RENDER_EXTERNAL_URL', 'http://localhost')),
 
     /*
     |--------------------------------------------------------------------------

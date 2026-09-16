@@ -1,0 +1,58 @@
+databases:
+  - name: fhws-transport-db
+    plan: free
+    databaseName: fhws_transport
+    user: fhws_transport
+
+services:
+  - type: web
+    name: fhws-transport
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: "Faculty of Health and Wellness Sciences"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      # Generate locally with `php artisan key:generate --show` and paste
+      # the result (including the "base64:" prefix) into the Render
+      # dashboard — not stored here so it never ends up in git.
+      - key: APP_KEY
+        sync: false
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: warning
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: fhws-transport-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: fhws-transport-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: fhws-transport-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: fhws-transport-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: fhws-transport-db
+          property: password
