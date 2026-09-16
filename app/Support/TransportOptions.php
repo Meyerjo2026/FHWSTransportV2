@@ -32,15 +32,19 @@ class TransportOptions
         '18:00 - 06:00', '19:00 - 07:00',
     ];
 
+    /**
+     * Departments within CPUT's Faculty of Health & Wellness Sciences
+     * (https://www.cput.ac.za/faculties/fhws/courses), matching the
+     * groupings used for its course/qualification listing.
+     */
     public const DEPARTMENTS = [
+        'Biomedical Sciences',
+        'Dental Sciences',
         'Emergency Medical Sciences',
+        'Medical Imaging & Therapeutic Sciences',
         'Nursing Sciences',
-        'Medical Laboratory Sciences',
-        'Radiography',
-        'Environmental & Occupational Studies',
+        'Ophthalmic Sciences',
         'Somatology',
-        'Dental Technology',
-        'Human Nutrition & Dietetics',
     ];
 
     /**
