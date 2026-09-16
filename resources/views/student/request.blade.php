@@ -39,7 +39,7 @@
             <div class="grid">
                 <div class="field">
                     <label>Department</label>
-                    <select name="department" required>
+                    <select name="department" id="department" required onchange="populateQualifications()">
                         <option value="" disabled selected>Select a department</option>
                         @foreach ($departments as $dept)
                             <option value="{{ $dept }}">{{ $dept }}</option>
@@ -48,14 +48,29 @@
                 </div>
                 <div class="field">
                     <label>Qualification (studying)</label>
-                    <select name="qualification" required>
-                        <option value="" disabled selected>Select a qualification</option>
-                        @foreach ($qualifications as $qual)
-                            <option value="{{ $qual }}">{{ $qual }}</option>
-                        @endforeach
+                    <select name="qualification" id="qualification" required disabled>
+                        <option value="" disabled selected>Select a department first</option>
                     </select>
                 </div>
             </div>
+            <script>
+                const qualificationsByDepartment = @json($qualificationsByDepartment);
+                function populateQualifications() {
+                    const deptSelect = document.getElementById('department');
+                    const qualSelect = document.getElementById('qualification');
+                    const quals = qualificationsByDepartment[deptSelect.value] || [];
+                    qualSelect.innerHTML = '';
+                    if (quals.length === 0) {
+                        qualSelect.disabled = true;
+                        qualSelect.appendChild(new Option('Select a department first', '', true, true));
+                        return;
+                    }
+                    qualSelect.disabled = false;
+                    qualSelect.appendChild(new Option('Select a qualification', '', true, true));
+                    qualSelect.options[0].disabled = true;
+                    quals.forEach(q => qualSelect.appendChild(new Option(q, q)));
+                }
+            </script>
             <div class="field">
                 <label>Time slot</label>
                 <select name="time_select" id="time_select" onchange="document.getElementById('custom-time-wrap').style.display = this.value === 'Custom' ? 'block' : 'none'; document.getElementById('time').value = this.value === 'Custom' ? '' : this.value;">

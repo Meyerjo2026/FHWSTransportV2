@@ -33,57 +33,70 @@ class TransportOptions
     ];
 
     /**
-     * Departments within CPUT's Faculty of Health & Wellness Sciences
-     * (https://www.cput.ac.za/faculties/fhws/courses), matching the
-     * groupings used for its course/qualification listing.
+     * CPUT Faculty of Health & Wellness Sciences departments, each mapped
+     * to its undergraduate qualifications
+     * (https://www.cput.ac.za/faculties/fhws/courses). Postgraduate
+     * qualifications (PG Dip, Master's, Doctorates) are intentionally
+     * excluded — undergraduate only. The qualification dropdown is
+     * dependent on the selected department.
      */
-    public const DEPARTMENTS = [
-        'Biomedical Sciences',
-        'Dental Sciences',
-        'Emergency Medical Sciences',
-        'Medical Imaging & Therapeutic Sciences',
-        'Nursing Sciences',
-        'Ophthalmic Sciences',
-        'Somatology',
-    ];
-
-    /**
-     * Undergraduate qualifications offered by CPUT's Faculty of Health &
-     * Wellness Sciences (https://www.cput.ac.za/faculties/fhws/courses).
-     * Postgraduate qualifications (PG Dip, Master's, Doctorates) are
-     * intentionally excluded — this list is undergraduate-only.
-     */
-    public const QUALIFICATIONS = [
-        // Biomedical Sciences
-        'Higher Certificate in Biomedical Sciences',
-        'Bachelor of Health Sciences in Medical Laboratory Science (Extended Curriculum Programme)',
-        'Bachelor of Health Sciences in Medical Laboratory Science (Articulation)',
-        'Bachelor of Health Sciences in Medical Laboratory Science',
-        // Dental Sciences
-        'Higher Certificate in Dental Assisting',
-        // Emergency Medical Sciences
-        'Higher Certificate in Emergency Medical Care',
-        'Diploma in Emergency Care',
-        'Bachelor of Emergency Medical Care (Extended Curriculum Programme)',
-        'Bachelor of Emergency Medical Care',
-        // Medical Imaging & Therapeutic Sciences
-        'Bachelor of Science in Diagnostic Radiography',
-        'Bachelor of Science in Diagnostic Ultrasound',
-        'Bachelor of Science in Nuclear Medicine Technology',
-        'Bachelor of Science in Radiation Therapy',
-        // Nursing Sciences
-        'Bachelor of Nursing (Extended Curriculum Programme)',
-        'Bachelor of Nursing',
-        // Ophthalmic Sciences
-        'Bachelor of Health Sciences in Opticianry',
-        // Somatology
-        'Diploma in Somatology',
-        'Advanced Diploma in Somatology',
-        // Non-diploma/degree study (Health and Wellness)
-        'Health and Wellness: Non-Diploma/Degree',
+    public const QUALIFICATIONS_BY_DEPARTMENT = [
+        'Biomedical Sciences' => [
+            'Higher Certificate in Biomedical Sciences',
+            'Bachelor of Health Sciences in Medical Laboratory Science (Extended Curriculum Programme)',
+            'Bachelor of Health Sciences in Medical Laboratory Science (Articulation)',
+            'Bachelor of Health Sciences in Medical Laboratory Science',
+        ],
+        'Dental Sciences' => [
+            'Higher Certificate in Dental Assisting',
+        ],
+        'Emergency Medical Sciences' => [
+            'Higher Certificate in Emergency Medical Care',
+            'Diploma in Emergency Care',
+            'Bachelor of Emergency Medical Care (Extended Curriculum Programme)',
+            'Bachelor of Emergency Medical Care',
+        ],
+        'Medical Imaging & Therapeutic Sciences' => [
+            'Bachelor of Science in Diagnostic Radiography',
+            'Bachelor of Science in Diagnostic Ultrasound',
+            'Bachelor of Science in Nuclear Medicine Technology',
+            'Bachelor of Science in Radiation Therapy',
+        ],
+        'Nursing Sciences' => [
+            'Bachelor of Nursing (Extended Curriculum Programme)',
+            'Bachelor of Nursing',
+        ],
+        'Ophthalmic Sciences' => [
+            'Bachelor of Health Sciences in Opticianry',
+        ],
+        'Wellness Sciences' => [
+            'Diploma in Somatology',
+            'Advanced Diploma in Somatology',
+            'Health and Wellness: Non-Diploma/Degree',
+        ],
     ];
 
     public const DEFAULT_RATE = 673.28;
 
     public const MAX_STUDENTS_PER_TRIP = 20;
+
+    public static function departments(): array
+    {
+        return array_keys(self::QUALIFICATIONS_BY_DEPARTMENT);
+    }
+
+    public static function qualificationsFor(?string $department): array
+    {
+        return self::QUALIFICATIONS_BY_DEPARTMENT[$department] ?? [];
+    }
+
+    public static function allQualifications(): array
+    {
+        return array_values(array_unique(array_merge(...array_values(self::QUALIFICATIONS_BY_DEPARTMENT))));
+    }
+
+    public static function isValidPair(string $department, string $qualification): bool
+    {
+        return in_array($qualification, self::qualificationsFor($department), true);
+    }
 }

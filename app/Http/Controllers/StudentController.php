@@ -16,8 +16,8 @@ class StudentController extends Controller
             'user' => Auth::user(),
             'sites' => ClinicalSite::where('active', true)->orderBy('name')->get(),
             'timeSlots' => TransportOptions::TIME_SLOTS,
-            'departments' => TransportOptions::DEPARTMENTS,
-            'qualifications' => TransportOptions::QUALIFICATIONS,
+            'departments' => TransportOptions::departments(),
+            'qualificationsByDepartment' => TransportOptions::QUALIFICATIONS_BY_DEPARTMENT,
         ]);
     }
 
@@ -27,10 +27,14 @@ class StudentController extends Controller
             'clinical_site_id' => ['required', 'exists:clinical_sites,id'],
             'date' => ['required', 'date'],
             'time' => ['required', 'string'],
-            'department' => ['required', 'string'],
+            'department' => ['required', 'string', 'in:'.implode(',', TransportOptions::departments())],
             'qualification' => ['required', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        if (! TransportOptions::isValidPair($data['department'], $data['qualification'])) {
+            return back()->withErrors(['qualification' => 'Please select a qualification that belongs to the chosen department.'])->withInput();
+        }
 
         $user = Auth::user();
         $site = ClinicalSite::findOrFail($data['clinical_site_id']);
