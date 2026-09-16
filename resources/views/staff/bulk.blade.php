@@ -1,4 +1,4 @@
-<x-shell :user="$user" :active="'/staff/bulk'" :tabs="['/staff' => 'Approve Trips', '/staff/bulk' => 'Bulk Upload']">
+<x-shell :user="$user" :active="'/staff/bulk'" :tabs="['/staff' => 'Approve Trips', '/staff/bulk' => 'Bulk Upload Trips', '/staff/students' => 'Bulk Upload Students']">
     <div class="card" style="max-width:720px;">
         <h2>Bulk upload trips</h2>
         <p class="muted" style="font-size:13px;">Upload a CSV with columns: <code>name,email,number,site,date,time,department,qualification,notes</code> (header row required). <code>site</code> must match an existing clinical site name exactly. Date format: YYYY-MM-DD. Rows are added as <strong>approved</strong> trips.</p>

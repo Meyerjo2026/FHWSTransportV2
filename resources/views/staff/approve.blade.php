@@ -1,4 +1,4 @@
-<x-shell :user="$user" :active="'/staff'" :tabs="['/staff' => 'Approve Trips', '/staff/bulk' => 'Bulk Upload']">
+<x-shell :user="$user" :active="'/staff'" :tabs="['/staff' => 'Approve Trips', '/staff/bulk' => 'Bulk Upload Trips', '/staff/students' => 'Bulk Upload Students']">
     <div class="card">
         <h2>Pending requests <span class="badge-count">{{ $pending->count() }}</span></h2>
         @if ($pending->isEmpty())

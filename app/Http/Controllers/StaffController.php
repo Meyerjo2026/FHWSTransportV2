@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\ClinicalSite;
 use App\Models\TripRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class StaffController extends Controller
 {
@@ -81,5 +83,82 @@ class StaffController extends Controller
         }
 
         return back()->with('success', "Uploaded and approved {$count} trip(s).");
+    }
+
+    public function bulkStudentsForm()
+    {
+        return view('staff.bulk-students', ['user' => Auth::user()]);
+    }
+
+    public function bulkStudentsUpload(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file'],
+        ]);
+
+        $rows = array_map('str_getcsv', file($request->file('file')->getRealPath()));
+        $header = array_map(fn ($h) => strtolower(trim($h)), array_shift($rows) ?? []);
+
+        $created = [];
+        $skipped = [];
+
+        foreach ($rows as $row) {
+            if (! $row || count($row) < count($header)) {
+                continue;
+            }
+            $assoc = array_combine($header, array_map('trim', $row));
+            $name = $assoc['name'] ?? '';
+            $email = $assoc['email'] ?? '';
+            $number = $assoc['number'] ?? '';
+
+            if (! $name || ! $email) {
+                continue;
+            }
+            if (User::where('email', $email)->exists()) {
+                $skipped[] = $email;
+
+                continue;
+            }
+
+            $tempPassword = self::generateTempPassword();
+
+            User::create([
+                'name' => $name,
+                'email' => $email,
+                'number' => $number,
+                'role' => 'student',
+                'password' => Hash::make($tempPassword),
+                'must_change_password' => true,
+            ]);
+
+            $created[] = [
+                'name' => $name,
+                'email' => $email,
+                'number' => $number,
+                'password' => $tempPassword,
+            ];
+        }
+
+        return view('staff.bulk-students', [
+            'user' => Auth::user(),
+            'created' => $created,
+            'skipped' => $skipped,
+        ]);
+    }
+
+    /**
+     * A random temporary password using an unambiguous character set
+     * (no 0/O/1/l/I) so it's easy to read off a printed list and type in.
+     */
+    private static function generateTempPassword(int $length = 10): string
+    {
+        $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+
+        return $password;
     }
 }
