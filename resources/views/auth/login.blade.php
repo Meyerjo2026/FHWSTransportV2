@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPUT EMS Transport Request Platform</title>
+    <title>Faculty of Health and Wellness Sciences — Transport Requests</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
 </head>
 <body>
 <div class="login-wrap">
     <div class="login-card">
-        <h1>&#128666; CPUT EMS Transport</h1>
-        <p class="sub">Student placement transport request platform</p>
+        <h1>Faculty of Health and Wellness Sciences</h1>
+        <p class="sub">Transport Request Platform</p>
         <div class="tabbar">
             <a class="active">Sign in</a>
             <a href="{{ route('register') }}">Student sign up</a>

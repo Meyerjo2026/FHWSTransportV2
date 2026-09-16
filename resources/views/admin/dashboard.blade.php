@@ -30,7 +30,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                         <tr>
                             <td>{{ $row['label'] }}</td>
                             <td style="min-width:160px;">
-                                <div style="background:var(--pill-bg,#eef1f6);border-radius:4px;overflow:hidden;height:8px;">
+                                <div style="background:var(--border);border-radius:4px;overflow:hidden;height:8px;">
                                     <div style="background:var(--primary);width:{{ $row['pct'] }}%;height:8px;"></div>
                                 </div>
                             </td>
@@ -58,7 +58,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                         <tr>
                             <td>{{ $row['label'] }}</td>
                             <td style="min-width:160px;">
-                                <div style="background:var(--pill-bg,#eef1f6);border-radius:4px;overflow:hidden;height:8px;">
+                                <div style="background:var(--border);border-radius:4px;overflow:hidden;height:8px;">
                                     <div style="background:var(--green);width:{{ $row['pct'] }}%;height:8px;"></div>
                                 </div>
                             </td>
