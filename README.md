@@ -1,59 +1,83 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CPUT Faculty of Health & Wellness Sciences — Transport Request Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel app for managing student clinical-placement transport requests: students submit trip requests, staff approve them and bulk-onboard student accounts, and admins consolidate trips, combine nearby ones into shared journeys, generate RFQs, and track placements on a map.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 12, PHP 8.4 (via [Herd](https://herd.laravel.com))
+- **MySQL** for storage (see setup below)
+- Leaflet/OpenStreetMap for the placements map — no external API key required
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Local setup
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Requires [Herd](https://herd.laravel.com) (or any PHP 8.2+/Composer setup) and MySQL.
 
-## Learning Laravel
+### 1. Install and start MySQL
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+brew install mysql
+brew services start mysql   # starts now and on every login
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 2. Create the database and app user
 
-## Laravel Sponsors
+```bash
+mysql -u root <<'SQL'
+CREATE DATABASE transport_herd CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'transport_herd'@'localhost' IDENTIFIED BY 'choose-a-password';
+GRANT ALL PRIVILEGES ON transport_herd.* TO 'transport_herd'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 3. Configure and migrate
 
-### Premium Partners
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+# edit .env: set DB_PASSWORD to the password you chose above
+php artisan migrate --seed
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 4. Serve it
 
-## Contributing
+If this folder is parked under Herd (e.g. `~/Herd/transport-herd`), it's already served at `https://transport-herd.test`. Otherwise:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan serve
+```
 
-## Code of Conduct
+## Demo accounts (from the seeder)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Role    | Email                     | Password    |
+|---------|----------------------------|-------------|
+| Admin   | admin@cput.ac.za          | admin123    |
+| Staff   | staff@cput.ac.za          | staff123    |
+| Student | student@mycput.ac.za      | student123  |
 
-## Security Vulnerabilities
+Students can also self-register from the login page. Staff can bulk-create student accounts under **Staff → Bulk Upload Students** with temporary passwords students must change on first login.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Running tests
 
-## License
+Tests run against an isolated in-memory SQLite database (configured in `phpunit.xml`), independent of the MySQL database used for the app itself:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan test
+```
+
+## Key features
+
+- **Student**: submit transport requests (clinical site, date, time, department, qualification); pickup is always CPUT Bellville Campus.
+- **Staff**: approve/reject requests, bulk-upload trips or student accounts via CSV.
+- **Admin**:
+  - Consolidate/finalise trips, generate RFQs in the HG Travelling Services invoice format
+  - Manage the clinical site directory (name, address, coordinates)
+  - **AI Trip Planner** — recommends combining separate trips into one multi-stop journey when their clinical sites are close together (deterministic distance-clustering, not a hosted AI model — see `App\Support\JourneyPlanner`)
+  - **Placements map** — Leaflet map of where students are placed, filterable by department/date/shift
+  - **Dashboard** — department/qualification usage stats, CSV export
+
+## Notes
+
+- `AUTH_SECRET`-equivalent here is Laravel's `APP_KEY`, generated via `php artisan key:generate` — treat it as a secret, especially in production.
+- Session/cache/queue all use the `database` driver, so they persist in MySQL alongside app data.
