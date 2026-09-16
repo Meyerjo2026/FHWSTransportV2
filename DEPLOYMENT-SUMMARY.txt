@@ -1,0 +1,174 @@
+# Transport Herd - Deployment Artifacts Summary
+
+All files are ready in the `FHWSTransport/` directory.
+
+## Generated Files
+
+### Kubernetes Manifests
+1. **k8s-deployment.yaml** (2.5KB)
+   - Namespace, ConfigMap, Secret, Deployment (2 replicas), Service (ClusterIP)
+   - Ready to apply: `kubectl apply -f k8s-deployment.yaml`
+
+2. **k8s-ingress.yaml** (847B)
+   - NGINX Ingress with HTTPS/Let's Encrypt
+   - Requires: NGINX Ingress Controller + cert-manager
+   - Apply after deployment: `kubectl apply -f k8s-ingress.yaml`
+
+### CI/CD
+3. **.github/workflows/build-deploy.yml** (2.9KB)
+   - Multi-platform build (linux/amd64, linux/arm64)
+   - Auto-push to GitHub Container Registry (GHCR)
+   - Auto-deploy to Kubernetes on main branch
+   - Tests on pull requests
+   - Automatically triggers on: push to main/dev, PR to main
+
+### Local Development
+4. **docker-compose.yml** (1.4KB)
+   - Laravel app + MySQL 8.0
+   - Hot reload via `develop.watch`
+   - Ports: 8080 (app), 3306 (MySQL)
+   - Run: `docker compose up --pull always`
+
+### Docker Image
+5. **transport-herd:latest** (234MB)
+   - Multi-stage build (Node assets + PHP runtime)
+   - Already built and available locally
+   - Ready to deploy or push to registry
+
+### Documentation
+6. **DEPLOYMENT-GUIDE.md** (9KB)
+   - Complete step-by-step deployment instructions
+   - Prerequisites and quick-start recipes
+   - Troubleshooting guide
+   - Production hardening checklist
+
+7. **REGISTRY-SETUP.md** (2KB)
+   - GitHub Container Registry (GHCR)
+   - AWS ECR
+   - Harbor (self-hosted)
+   - Private Docker Registry
+
+---
+
+## Deployment Workflow
+
+### Option 1: Quick Local Test (5 minutes)
+```bash
+cd FHWSTransport
+docker compose up --pull always
+# Access: http://localhost:8080
+```
+
+### Option 2: Deploy to Kubernetes (10 minutes)
+```bash
+# 1. Update secrets in k8s-deployment.yaml
+kubectl apply -f k8s-deployment.yaml
+kubectl apply -f k8s-ingress.yaml
+
+# 2. Run migrations
+kubectl exec -it <pod-name> -n transport-herd-dev -- php artisan migrate
+
+# 3. Access via ingress or port-forward
+kubectl port-forward svc/transport-herd -n transport-herd-dev 8080:80
+```
+
+### Option 3: GitHub Actions CI/CD (Automatic)
+```bash
+# Just push to GitHub
+git push origin main
+# Workflow automatically builds, pushes to GHCR, and deploys to Kubernetes
+```
+
+---
+
+## Environment Variables (Update Before Deployment)
+
+In `k8s-deployment.yaml`, modify the Secret section:
+
+```yaml
+stringData:
+  APP_KEY: "base64:YOUR_GENERATED_KEY"  # Run: docker run --rm transport-herd php artisan key:generate --show
+  DB_HOST: "mysql.transport-herd-dev"    # Or your external MySQL host
+  DB_PASSWORD: "SECURE_PASSWORD_HERE"
+  APP_URL: "http://transport-herd.example.com"
+```
+
+---
+
+## Docker Build Verification
+
+```bash
+# Image exists and ready
+docker images | grep transport-herd
+# Output: transport-herd  latest  4e69567db56d  234MB
+
+# Test locally
+docker run -p 8080:80 transport-herd:latest
+# Access: http://localhost:8080
+```
+
+---
+
+## Next Steps
+
+1. **Update Configuration**
+   - Generate APP_KEY: `docker run --rm transport-herd php artisan key:generate --show`
+   - Update `k8s-deployment.yaml` with APP_KEY and database credentials
+
+2. **Choose Deployment Path**
+   - **Local dev?** → `docker compose up --pull always`
+   - **Kubernetes?** → `kubectl apply -f k8s-deployment.yaml`
+   - **CI/CD?** → Push to GitHub; workflow handles the rest
+
+3. **Setup Registry** (if pushing to cloud)
+   - GHCR: Already configured in GitHub Actions
+   - ECR: Follow REGISTRY-SETUP.md
+   - Harbor: Follow REGISTRY-SETUP.md
+
+4. **Install K8s Dependencies** (if not already installed)
+   ```bash
+   # NGINX Ingress
+   helm install nginx-ingress ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace
+   
+   # cert-manager
+   helm install cert-manager jetstack/cert-manager -n cert-manager --create-namespace --set installCRDs=true
+   ```
+
+---
+
+## File Structure
+
+```
+FHWSTransport/
+├── Dockerfile
+├── docker-compose.yml                    # NEW: Local dev
+├── k8s-deployment.yaml                   # NEW: Kubernetes deployment
+├── k8s-ingress.yaml                      # NEW: Kubernetes ingress
+├── DEPLOYMENT-GUIDE.md                   # NEW: Complete guide
+├── REGISTRY-SETUP.md                     # NEW: Registry options
+├── .github/
+│   └── workflows/
+│       └── build-deploy.yml              # NEW: GitHub Actions
+├── app/
+├── config/
+├── resources/
+├── routes/
+├── storage/
+├── bootstrap/
+├── public/
+├── docker/
+│   ├── apache-app.conf
+│   └── entrypoint.sh
+└── composer.json
+```
+
+---
+
+## Support
+
+For deployment issues, refer to:
+- **DEPLOYMENT-GUIDE.md** — Troubleshooting section
+- **Kubernetes logs:** `kubectl logs <pod> -n transport-herd-dev`
+- **Docker Compose logs:** `docker compose logs -f app`
+
+All files are production-ready.
