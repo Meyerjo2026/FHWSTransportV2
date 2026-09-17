@@ -115,6 +115,71 @@ class TransportOptions
         'Western Cape Rehabilitation Centre' => ['Western Cape Rehabilitation Centre, Lentegeur, Mitchell\'s Plain, Cape Town', -34.049524, 18.619158],
     ];
 
+    /**
+     * Clinical site categories used for the admin filter. "Ambulance
+     * Base" and "Tertiary Hospital" are assigned explicitly below since
+     * they don't follow a name-suffix convention; everything else is
+     * derived from the naming conventions already present in
+     * SITE_SEED (CHC/MOU/CDC/CPOA suffixes, "Hospital"/"Clinic" in the
+     * name). Kept as a static list so an admin editing a site's type
+     * picks from the same fixed set the filter offers.
+     */
+    public const TYPE_OPTIONS = [
+        'Ambulance Base', 'Tertiary Hospital', 'District Hospital',
+        'CHC', 'MOU', 'CDC', 'CPOA', 'Clinic', 'Other',
+    ];
+
+    private const AMBULANCE_BASES = [
+        'Red Cross Air Mercy Service (AMS)', '107 Emergency Centre & Ambulance Service',
+        'Air Mercy Services', 'College of Emergency Care', 'Metro Ambulance Services',
+        'Metro EMS Northern Division', 'Metro Emergency Medical Service - Western Division',
+        'Emergency Medical Services (EMS) - Vredendal', 'Hout Bay Volunteer EMS',
+        'South African Paramedic Services',
+    ];
+
+    private const TERTIARY_HOSPITALS = [
+        'Groote Schuur Hospital', 'Tygerberg Hospital', 'Tygerberg Hospital Anesthetic Department',
+    ];
+
+    private const OTHER_SITES = [
+        'Lentegeur Psychiatric Hospital', 'Mowbray Maternity Hospital',
+        "Red Cross War Memorial Children's Hospital", 'Western Cape Rehabilitation Centre',
+        'Life Vincent Pallotti Hospital', 'Louis Leipoldt Medi-Clinic', 'Pinelands Place',
+    ];
+
+    public static function deriveType(string $name): string
+    {
+        if (in_array($name, self::AMBULANCE_BASES, true)) {
+            return 'Ambulance Base';
+        }
+        if (in_array($name, self::TERTIARY_HOSPITALS, true)) {
+            return 'Tertiary Hospital';
+        }
+        if (in_array($name, self::OTHER_SITES, true)) {
+            return 'Other';
+        }
+        if (str_ends_with($name, 'CHC')) {
+            return 'CHC';
+        }
+        if (str_ends_with($name, 'MOU')) {
+            return 'MOU';
+        }
+        if (str_ends_with($name, 'CDC')) {
+            return 'CDC';
+        }
+        if (str_ends_with($name, 'CPOA')) {
+            return 'CPOA';
+        }
+        if (str_contains($name, 'Clinic')) {
+            return 'Clinic';
+        }
+        if (str_contains($name, 'Hospital')) {
+            return 'District Hospital';
+        }
+
+        return 'Other';
+    }
+
     public const TIME_SLOTS = [
         '06:00 - 14:00', '06:00 - 18:00', '07:00 - 17:00', '07:00 - 19:00',
         '18:00 - 06:00', '19:00 - 07:00',

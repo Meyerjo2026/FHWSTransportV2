@@ -17,6 +17,15 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                 <label>Address</label>
                 <input name="address" placeholder="e.g. Francie van Zijl Dr, Parow, Cape Town">
             </div>
+            <div class="field">
+                <label>Type</label>
+                <select name="type">
+                    <option value="">— Select type —</option>
+                    @foreach ($typeOptions as $option)
+                        <option value="{{ $option }}">{{ $option }}</option>
+                    @endforeach
+                </select>
+            </div>
             <button class="btn" type="submit">Add site</button>
         </form>
     </div>
@@ -26,8 +35,22 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
             Coordinates come from OpenStreetMap geocoding, not manual entry — click "Verify" to open that exact pin in Google Maps and confirm it against street view / satellite imagery.
             <span style="color:var(--amber);">Shared estimate</span> means this site's coordinates were approximated at suburb level (no exact match found) and are shared with at least one other site — check these first.
         </p>
+        <form method="GET" action="/admin/sites" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;">
+            <div class="field" style="margin:0;">
+                <label>Filter by type</label>
+                <select name="type" onchange="this.form.submit()">
+                    <option value="">All types</option>
+                    @foreach ($typeOptions as $option)
+                        <option value="{{ $option }}" @selected($selectedType === $option)>{{ $option }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @if ($selectedType)
+                <a href="/admin/sites" class="btn small secondary">Clear filter</a>
+            @endif
+        </form>
         <table>
-            <thead><tr><th>Site name</th><th>Address</th><th>Coordinates</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Site name</th><th>Type</th><th>Address</th><th>Coordinates</th><th>Status</th><th></th></tr></thead>
             <tbody>
                 @foreach ($sites as $site)
                     @php
@@ -36,6 +59,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                     @endphp
                     <tr id="site-row-{{ $site->id }}">
                         <td>{{ $site->name }}</td>
+                        <td class="muted">{{ $site->type ?? '—' }}</td>
                         <td class="muted">{{ $site->address }}</td>
                         <td class="muted">
                             @if ($site->lat !== null)
@@ -59,7 +83,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                         </td>
                     </tr>
                     <tr id="site-edit-{{ $site->id }}" style="display:none;">
-                        <td colspan="5">
+                        <td colspan="6">
                             <form method="POST" action="/admin/sites/{{ $site->id }}" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
                                 @csrf
                                 <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
@@ -70,6 +94,15 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                                     <div class="field" style="margin:0;">
                                         <label>Address</label>
                                         <input name="address" value="{{ $site->address }}">
+                                    </div>
+                                    <div class="field" style="margin:0;">
+                                        <label>Type</label>
+                                        <select name="type">
+                                            <option value="">— Select type —</option>
+                                            @foreach ($typeOptions as $option)
+                                                <option value="{{ $option }}" @selected($site->type === $option)>{{ $option }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="field" style="margin:0;width:120px;">
                                         <label>Latitude</label>

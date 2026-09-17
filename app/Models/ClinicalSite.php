@@ -9,6 +9,7 @@ class ClinicalSite extends Model
     protected $fillable = [
         'name',
         'address',
+        'type',
         'lat',
         'lng',
         'active',

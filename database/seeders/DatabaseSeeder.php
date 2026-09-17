@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
         foreach (TransportOptions::SITE_SEED as $name => [$address, $lat, $lng]) {
             ClinicalSite::updateOrCreate(
                 ['name' => $name],
-                ['address' => $address, 'lat' => $lat, 'lng' => $lng]
+                ['address' => $address, 'lat' => $lat, 'lng' => $lng, 'type' => TransportOptions::deriveType($name)]
             );
         }
     }

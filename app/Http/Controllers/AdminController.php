@@ -12,9 +12,13 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
-    public function sites()
+    public function sites(Request $request)
     {
-        $sites = ClinicalSite::orderBy('name')->get();
+        $type = $request->query('type');
+
+        $sites = ClinicalSite::orderBy('name')
+            ->when($type, fn ($q) => $q->where('type', $type))
+            ->get();
 
         // Sites sharing the exact same coordinates are usually a sign the
         // location was approximated at suburb level (see
@@ -31,6 +35,8 @@ class AdminController extends Controller
             'user' => Auth::user(),
             'sites' => $sites,
             'duplicateCoordKeys' => $duplicateCoordKeys,
+            'typeOptions' => TransportOptions::TYPE_OPTIONS,
+            'selectedType' => $type,
         ]);
     }
 
@@ -39,6 +45,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:clinical_sites,name'],
             'address' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'string', 'in:'.implode(',', TransportOptions::TYPE_OPTIONS)],
         ]);
 
         ClinicalSite::create($data);
@@ -58,6 +65,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:clinical_sites,name,'.$site->id],
             'address' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'string', 'in:'.implode(',', TransportOptions::TYPE_OPTIONS)],
             'lat' => ['nullable', 'numeric', 'between:-90,90'],
             'lng' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
