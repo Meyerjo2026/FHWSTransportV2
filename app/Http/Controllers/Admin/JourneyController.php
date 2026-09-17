@@ -23,11 +23,23 @@ class JourneyController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        // The planner only considers approved-but-not-yet-finalised,
+        // not-yet-combined trips. If there's nothing to suggest, it's
+        // usually because everything eligible has already moved past that
+        // window — surfaced here so it reads as "nothing left to do" rather
+        // than "broken".
+        $eligibleCount = TripRequest::where('status', 'approved')->whereNull('journey_id')->count();
+        $finalisedCount = TripRequest::where('status', 'finalised')->count();
+        $pendingCount = TripRequest::where('status', 'pending')->count();
+
         return view('admin.journeys', [
             'user' => Auth::user(),
             'suggestions' => $suggestions,
             'active' => $active,
             'threshold' => $threshold,
+            'eligibleCount' => $eligibleCount,
+            'finalisedCount' => $finalisedCount,
+            'pendingCount' => $pendingCount,
         ]);
     }
 

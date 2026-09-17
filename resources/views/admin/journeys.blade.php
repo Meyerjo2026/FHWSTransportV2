@@ -1,5 +1,5 @@
 @php
-$tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject', '/admin/finalise' => 'Finalise Trips', '/admin/quotes' => 'Create RFQ', '/admin/sites' => 'Clinical Sites', '/admin/map' => 'Map', '/admin/journeys' => 'AI Trip Planner'];
+$tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject', '/admin/journeys' => 'AI Trip Planner', '/admin/finalise' => 'Finalise Trips', '/admin/quotes' => 'Create RFQ', '/admin/sites' => 'Clinical Sites', '/admin/map' => 'Map'];
 @endphp
 <x-shell :user="$user" :active="'/admin/journeys'" :tabs="$tabs">
     <div class="card">
@@ -9,6 +9,9 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
         </p>
         <p class="hint">
             This is a deterministic distance-clustering algorithm (not a hosted AI/LLM call — no external API key is configured for this app), so every recommendation is explainable: two sites are grouped if they're within the chosen distance of each other, directly or via a chain of nearby stops.
+        </p>
+        <p class="hint" style="color:var(--amber);">
+            Run this <strong>before</strong> finalising trips — once a trip is finalised its price is locked in for invoicing, so it's no longer eligible to be combined here.
         </p>
         <form method="GET" action="/admin/journeys" class="grid" style="max-width:360px;align-items:end;">
             <div class="field" style="margin:0;">
@@ -24,7 +27,29 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
     <div class="card">
         <h2>Recommended journeys <span class="badge-count">{{ $suggestions->count() }}</span></h2>
         @if ($suggestions->isEmpty())
-            <div class="empty">No nearby-site groupings found within {{ $threshold }}km right now.</div>
+            <div class="empty">
+                No nearby-site groupings found within {{ $threshold }}km right now.
+                @if ($eligibleCount === 0)
+                    <div style="margin-top:8px;">
+                        @if ($finalisedCount > 0 || $pendingCount > 0)
+                            There are no <strong>approved, not-yet-finalised</strong> trips to combine —
+                            @if ($pendingCount > 0)
+                                {{ $pendingCount }} trip{{ $pendingCount === 1 ? ' is' : 's are' }} still <a href="/admin/review">awaiting approval</a>
+                                @if ($finalisedCount > 0), and @endif
+                            @endif
+                            @if ($finalisedCount > 0)
+                                {{ $finalisedCount }} {{ $finalisedCount === 1 ? 'has' : 'have' }} already been <a href="/admin/finalise">finalised</a> (too late to combine).
+                            @else
+                                .
+                            @endif
+                        @else
+                            There are no approved trips at all yet.
+                        @endif
+                    </div>
+                @else
+                    <div style="margin-top:8px;">{{ $eligibleCount }} trip{{ $eligibleCount === 1 ? '' : 's' }} eligible, but none share a date/time/nearby-site match within {{ $threshold }}km — try a larger radius.</div>
+                @endif
+            </div>
         @else
             @foreach ($suggestions as $s)
                 <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
