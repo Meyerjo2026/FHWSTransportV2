@@ -98,4 +98,44 @@ class JourneyPlannerTest extends TestCase
 
         $this->assertSame(0.0, JourneyPlanner::maxPairwiseDistance($sites));
     }
+
+    /**
+     * Origin O, with C the closest site, then B, then A the furthest —
+     * listed in reverse (worst-case) input order to prove the nearest-
+     * neighbour heuristic actually reorders them rather than just
+     * echoing input order back.
+     */
+    public function test_order_route_visits_nearest_unvisited_site_first(): void
+    {
+        $origin = [-33.9000, 18.6000];
+        $siteC = (object) ['id' => 3, 'name' => 'C (nearest)', 'lat' => -33.9050, 'lng' => 18.6000]; // ~0.55km
+        $siteB = (object) ['id' => 2, 'name' => 'B (middle)', 'lat' => -33.9200, 'lng' => 18.6000]; // ~2.2km
+        $siteA = (object) ['id' => 1, 'name' => 'A (furthest)', 'lat' => -33.9500, 'lng' => 18.6000]; // ~5.5km
+
+        $route = JourneyPlanner::orderRoute(collect([$siteA, $siteB, $siteC]), ...$origin);
+
+        $this->assertSame([3, 2, 1], collect($route['stops'])->pluck('id')->all());
+        $this->assertCount(4, $route['legsKm']); // origin->C, C->B, B->A, A->origin
+        $this->assertGreaterThan(0, $route['totalKm']);
+    }
+
+    public function test_order_route_of_a_single_site_is_a_there_and_back_trip(): void
+    {
+        $origin = [-33.9000, 18.6000];
+        $site = (object) ['id' => 1, 'lat' => -33.9100, 'lng' => 18.6000]; // ~1.1km away
+
+        $route = JourneyPlanner::orderRoute(collect([$site]), ...$origin);
+
+        $this->assertCount(1, $route['stops']);
+        $this->assertCount(2, $route['legsKm']); // there, then back
+        $this->assertEqualsWithDelta($route['legsKm'][0] * 2, $route['totalKm'], 0.1);
+    }
+
+    public function test_order_route_of_no_sites_is_empty(): void
+    {
+        $route = JourneyPlanner::orderRoute(collect(), -33.9, 18.6);
+
+        $this->assertSame([], $route['stops']);
+        $this->assertSame(0.0, $route['totalKm']);
+    }
 }

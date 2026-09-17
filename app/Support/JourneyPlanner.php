@@ -146,4 +146,56 @@ class JourneyPlanner
 
         return $earthRadiusKm * $c;
     }
+
+    /**
+     * Recommends a visiting order for a set of sites on a single vehicle
+     * journey, starting and ending at the pickup point — nearest-neighbour
+     * heuristic (always drive to whichever unvisited site is closest to
+     * where you currently are). Not the mathematically optimal route
+     * (that's the travelling salesman problem, NP-hard for anything but
+     * tiny stop counts) but a good, fast, explainable approximation that's
+     * standard for this kind of routing.
+     *
+     * @return array{stops: array<int, object>, legsKm: array<int, float>, totalKm: float}
+     */
+    public static function orderRoute(Collection $sites, float $originLat, float $originLng): array
+    {
+        $remaining = $sites->values()->all();
+        $stops = [];
+        $legsKm = [];
+        $currentLat = $originLat;
+        $currentLng = $originLng;
+
+        while (! empty($remaining)) {
+            $nearestIndex = null;
+            $nearestKm = null;
+
+            foreach ($remaining as $i => $site) {
+                $km = self::haversineKm($currentLat, $currentLng, $site->lat, $site->lng);
+                if ($nearestKm === null || $km < $nearestKm) {
+                    $nearestKm = $km;
+                    $nearestIndex = $i;
+                }
+            }
+
+            $next = $remaining[$nearestIndex];
+            unset($remaining[$nearestIndex]);
+            $remaining = array_values($remaining);
+
+            $stops[] = $next;
+            $legsKm[] = round($nearestKm, 1);
+            $currentLat = $next->lat;
+            $currentLng = $next->lng;
+        }
+
+        // The leg back to the pickup point, closing the round trip.
+        $returnKm = round(self::haversineKm($currentLat, $currentLng, $originLat, $originLng), 1);
+        $legsKm[] = $returnKm;
+
+        return [
+            'stops' => $stops,
+            'legsKm' => $legsKm,
+            'totalKm' => round(array_sum($legsKm), 1),
+        ];
+    }
 }
