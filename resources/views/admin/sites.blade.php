@@ -27,7 +27,8 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
     <div class="card" style="max-width:640px;">
         <h2>Bulk upload clinical sites</h2>
         <p class="hint">CSV columns: <code>name, address, type, lat, lng</code>. Matches existing sites by name (updates them); new names are added. Only <code>name</code> is required.</p>
-        <form method="POST" action="/admin/sites/bulk-upload" enctype="multipart/form-data">
+        <a class="btn secondary" href="data:text/csv;charset=utf-8,name%2Caddress%2Ctype%2Clat%2Clng%0ATygerberg%20Hospital%2C%22Francie%20van%20Zijl%20Dr%2C%20Parow%2C%20Cape%20Town%22%2CTertiary%20Hospital%2C-33.913661%2C18.614302%0A" download="clinical-sites-template.csv">Download template.csv</a>
+        <form method="POST" action="/admin/sites/bulk-upload" enctype="multipart/form-data" style="margin-top:12px;">
             @csrf
             <div class="field">
                 <label>CSV file</label>
