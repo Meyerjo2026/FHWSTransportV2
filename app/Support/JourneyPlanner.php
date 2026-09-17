@@ -20,7 +20,15 @@ use Illuminate\Support\Collection;
  */
 class JourneyPlanner
 {
-    public const DEFAULT_THRESHOLD_KM = 10.0;
+    /**
+     * Lowered from an earlier 10km default after load-testing with 100
+     * requests across Cape Town's full site spread: at 10km, transitive
+     * chaining (A near B, B near C) collapsed nearly everything into one
+     * ~46km-wide, 96-student "journey" — not a group any single vehicle
+     * could realistically run. 5km keeps clusters to sites actually
+     * close enough together to share a trip.
+     */
+    public const DEFAULT_THRESHOLD_KM = 5.0;
 
     /**
      * @return Collection<int, array{
@@ -32,6 +40,7 @@ class JourneyPlanner
     public static function suggest(?float $thresholdKm = null): Collection
     {
         $thresholdKm ??= self::DEFAULT_THRESHOLD_KM;
+        $maxPerTrip = TransportOptions::MAX_STUDENTS_PER_TRIP;
 
         $requests = TripRequest::with('clinicalSite')
             ->where('status', 'approved')
@@ -42,7 +51,7 @@ class JourneyPlanner
 
         return $requests
             ->groupBy(fn ($r) => $r->date.'|'.$r->time)
-            ->flatMap(function (Collection $bucket) use ($thresholdKm) {
+            ->flatMap(function (Collection $bucket) use ($thresholdKm, $maxPerTrip) {
                 $date = $bucket->first()->date;
                 $time = $bucket->first()->time;
 
@@ -52,8 +61,13 @@ class JourneyPlanner
                 $clusters = self::cluster($sites, $thresholdKm);
 
                 return collect($clusters)
+                    ->flatMap(function ($siteIds) use ($bySite, $maxPerTrip) {
+                        $clusterSites = collect($siteIds)->map(fn ($id) => $bySite->get($id)->first()->clinicalSite)->values();
+
+                        return self::splitBySize($clusterSites, $bySite, $maxPerTrip);
+                    })
                     ->filter(fn ($siteIds) => count($siteIds) >= 2)
-                    ->map(function ($siteIds) use ($bySite, $date, $time, $thresholdKm) {
+                    ->map(function ($siteIds) use ($bySite, $date, $time) {
                         $items = collect($siteIds)->flatMap(fn ($id) => $bySite->get($id, collect()))->values();
                         $clusterSites = collect($siteIds)->map(fn ($id) => $bySite->get($id)->first()->clinicalSite)->values();
 
@@ -71,6 +85,49 @@ class JourneyPlanner
             })
             ->sortBy('date')
             ->values();
+    }
+
+    /**
+     * Splits a proximity cluster into vehicle-sized groups (each holding
+     * at most $maxPerTrip students) when the cluster as a whole is too
+     * big for one vehicle. Sites are visited in nearest-neighbour chain
+     * order first so each sub-group stays a geographically coherent run
+     * rather than an arbitrary slice — the same heuristic orderRoute()
+     * uses for routing, applied here to keep the split sensible.
+     *
+     * @return array<int, array<int>> list of site-id groups
+     */
+    public static function splitBySize(Collection $sites, Collection $bySite, int $maxPerTrip): array
+    {
+        if ($sites->isEmpty()) {
+            return [];
+        }
+
+        $first = $sites->first();
+        $ordered = self::orderRoute($sites, $first->lat, $first->lng)['stops'];
+
+        $groups = [];
+        $current = [];
+        $currentCount = 0;
+
+        foreach ($ordered as $site) {
+            $siteCount = $bySite->get($site->id, collect())->count();
+
+            if ($currentCount > 0 && $currentCount + $siteCount > $maxPerTrip) {
+                $groups[] = $current;
+                $current = [];
+                $currentCount = 0;
+            }
+
+            $current[] = $site->id;
+            $currentCount += $siteCount;
+        }
+
+        if ($current) {
+            $groups[] = $current;
+        }
+
+        return $groups;
     }
 
     /**
