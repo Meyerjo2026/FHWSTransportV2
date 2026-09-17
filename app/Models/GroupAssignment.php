@@ -29,18 +29,28 @@ class GroupAssignment extends Model
      * assigned to any one of the three (matches the OR logic in
      * StaffController::approve()). Used to tell a student who their
      * request has effectively been routed to.
+     *
+     * Runs one query per call — fine for a single request (e.g. right
+     * after submitting one), but callers resolving this for a *list*
+     * of requests (e.g. the "My Requests" table) should fetch
+     * all assignments once via all() and call resolve() per row
+     * instead, to avoid an N+1 query per row.
      */
     public static function staffFor(?string $year, ?string $department, ?string $qualification)
     {
-        return self::query()
-            ->whereNotNull('staff_id')
-            ->where(function ($q) use ($year, $department, $qualification) {
-                $q->where(fn ($q2) => $q2->where('type', 'year')->where('value', $year))
-                    ->orWhere(fn ($q2) => $q2->where('type', 'department')->where('value', $department))
-                    ->orWhere(fn ($q2) => $q2->where('type', 'qualification')->where('value', $qualification));
-            })
-            ->with('staff')
-            ->get()
+        return self::resolve(self::query()->whereNotNull('staff_id')->with('staff')->get(), $year, $department, $qualification);
+    }
+
+    /**
+     * In-memory equivalent of staffFor(), given a pre-fetched
+     * collection of assignments (with 'staff' eager-loaded).
+     */
+    public static function resolve($assignments, ?string $year, ?string $department, ?string $qualification)
+    {
+        return $assignments
+            ->filter(fn ($a) => ($a->type === 'year' && $a->value === $year)
+                || ($a->type === 'department' && $a->value === $department)
+                || ($a->type === 'qualification' && $a->value === $qualification))
             ->pluck('staff')
             ->filter()
             ->unique('id')

@@ -77,11 +77,13 @@ class StudentController extends Controller
 
     public function mine()
     {
+        $assignments = GroupAssignment::whereNotNull('staff_id')->with('staff')->get();
+
         $list = TripRequest::where('student_id', Auth::id())
             ->orderByDesc('created_at')
             ->get()
-            ->map(function ($r) {
-                $r->responsibleStaff = GroupAssignment::staffFor($r->year, $r->department, $r->qualification);
+            ->map(function ($r) use ($assignments) {
+                $r->responsibleStaff = GroupAssignment::resolve($assignments, $r->year, $r->department, $r->qualification);
 
                 return $r;
             });
