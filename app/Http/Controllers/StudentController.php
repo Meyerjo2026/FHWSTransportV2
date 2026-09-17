@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClinicalSite;
+use App\Models\GroupAssignment;
 use App\Models\TripRequest;
 use App\Support\TransportOptions;
 use Illuminate\Http\Request;
@@ -66,14 +67,24 @@ class StudentController extends Controller
             'source' => 'manual',
         ]);
 
-        return redirect('/student')->with('success', "Request submitted: {$site->name} on {$data['date']} ({$data['time']}). Awaiting approval.");
+        $responsibleStaff = GroupAssignment::staffFor($data['year'], $data['department'], $data['qualification']);
+        $approverNote = $responsibleStaff->isNotEmpty()
+            ? 'Awaiting approval from '.$responsibleStaff->pluck('name')->implode(', ').'.'
+            : 'Awaiting approval.';
+
+        return redirect('/student')->with('success', "Request submitted: {$site->name} on {$data['date']} ({$data['time']}). {$approverNote}");
     }
 
     public function mine()
     {
         $list = TripRequest::where('student_id', Auth::id())
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->map(function ($r) {
+                $r->responsibleStaff = GroupAssignment::staffFor($r->year, $r->department, $r->qualification);
+
+                return $r;
+            });
 
         return view('student.mine', [
             'user' => Auth::user(),

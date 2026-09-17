@@ -6,7 +6,7 @@
         @else
             <table>
                 <thead>
-                    <tr><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th>Year</th><th>Status</th><th>Notes</th></tr>
+                    <tr><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th>Year</th><th>Responsible staff</th><th>Status</th><th>Notes</th></tr>
                 </thead>
                 <tbody>
                     @foreach ($list as $r)
@@ -16,6 +16,7 @@
                             <td>{{ $r->site }}</td>
                             <td class="muted">{{ $r->department }}</td>
                             <td class="muted">{{ $r->year }}</td>
+                            <td class="muted">{{ $r->responsibleStaff->isNotEmpty() ? $r->responsibleStaff->pluck('name')->implode(', ') : 'Unassigned' }}</td>
                             <td><span class="pill {{ $r->status }}">{{ $r->status }}</span></td>
                             <td class="muted">{{ $r->notes }}</td>
                         </tr>
