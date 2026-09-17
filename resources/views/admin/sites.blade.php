@@ -34,7 +34,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                         $coordKey = $site->lat !== null ? round($site->lat, 5).','.round($site->lng, 5) : null;
                         $isSharedEstimate = $coordKey && $duplicateCoordKeys->contains($coordKey);
                     @endphp
-                    <tr>
+                    <tr id="site-row-{{ $site->id }}">
                         <td>{{ $site->name }}</td>
                         <td class="muted">{{ $site->address }}</td>
                         <td class="muted">
@@ -50,10 +50,36 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                             @endif
                         </td>
                         <td><span class="pill {{ $site->active ? 'approved' : 'rejected' }}">{{ $site->active ? 'active' : 'inactive' }}</span></td>
-                        <td>
-                            <form method="POST" action="/admin/sites/{{ $site->id }}/toggle">
+                        <td style="white-space:nowrap;">
+                            <button type="button" class="btn small secondary" onclick="document.getElementById('site-edit-{{ $site->id }}').style.display='table-row'; this.closest('tr').style.display='none';">Edit</button>
+                            <form method="POST" action="/admin/sites/{{ $site->id }}/toggle" style="display:inline;">
                                 @csrf
                                 <button class="btn small secondary" type="submit">{{ $site->active ? 'Deactivate' : 'Activate' }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr id="site-edit-{{ $site->id }}" style="display:none;">
+                        <td colspan="5">
+                            <form method="POST" action="/admin/sites/{{ $site->id }}" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                                @csrf
+                                <div class="field" style="margin:0;">
+                                    <label>Site name</label>
+                                    <input name="name" value="{{ $site->name }}" required>
+                                </div>
+                                <div class="field" style="margin:0;">
+                                    <label>Address</label>
+                                    <input name="address" value="{{ $site->address }}">
+                                </div>
+                                <div class="field" style="margin:0;width:120px;">
+                                    <label>Latitude</label>
+                                    <input name="lat" value="{{ $site->lat }}">
+                                </div>
+                                <div class="field" style="margin:0;width:120px;">
+                                    <label>Longitude</label>
+                                    <input name="lng" value="{{ $site->lng }}">
+                                </div>
+                                <button class="btn small" type="submit">Save</button>
+                                <button type="button" class="btn small secondary" onclick="document.getElementById('site-row-{{ $site->id }}').style.display='table-row'; this.closest('tr').style.display='none';">Cancel</button>
                             </form>
                         </td>
                     </tr>

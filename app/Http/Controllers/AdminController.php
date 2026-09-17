@@ -53,6 +53,20 @@ class AdminController extends Controller
         return back();
     }
 
+    public function updateSite(Request $request, ClinicalSite $site)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:clinical_sites,name,'.$site->id],
+            'address' => ['nullable', 'string', 'max:255'],
+            'lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180'],
+        ]);
+
+        $site->update($data);
+
+        return back()->with('success', "Updated clinical site: {$data['name']}.");
+    }
+
     public function consolidate()
     {
         $approved = TripRequest::whereIn('status', ['approved', 'finalised'])->get();
