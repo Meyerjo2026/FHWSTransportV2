@@ -22,19 +22,18 @@ class TransportOptions
      * Compiled from every destination actually billed across the HG
      * Travelling Services invoices in use (student placements, not
      * invented). Coordinates are geocoded (OpenStreetMap Nominatim,
-     * cross-checked against Google Maps for a sample of major
-     * hospitals — Tygerberg, Groote Schuur, Khayelitsha District —
-     * all within ~250m), with two exceptions kept as suburb-level
-     * manual estimates where geocoding returned a false-positive
-     * match: 'AMS' (matched an unrelated park) and 'Ikhwezi Clinic'
-     * (matched a same-named facility ~18km away in Strand). Suitable
-     * for the admin placement map overview, not turn-by-turn
-     * navigation. Used only by the seeder — the live dropdown/map
-     * read from the database so admins can add/edit sites without a
-     * code change.
+     * cross-checked against Google Maps for a sample of sites —
+     * Tygerberg, Groote Schuur, Khayelitsha District, Cape Town
+     * International Airport — all within ~350m), with one exception
+     * kept as a suburb-level manual estimate where geocoding returned
+     * a false-positive match: 'Ikhwezi Clinic' (matched a same-named
+     * facility ~18km away in Strand). Suitable for the admin placement
+     * map overview, not turn-by-turn navigation. Used only by the
+     * seeder — the live dropdown/map read from the database so admins
+     * can add/edit sites without a code change.
      */
     public const SITE_SEED = [
-        'AMS' => ['Ambulance Emergency Services, Bellville, Cape Town', -33.9, 18.63],
+        'Red Cross Air Mercy Service (AMS)' => ['Air Mercy Service, Cape Town International Airport, Matroosfontein, Cape Town', -33.968871, 18.599760],
         'Alexandra Hospital' => ['Alexandra Hospital, Maitland, Cape Town', -33.9225, 18.493056],
         'Anchusa CPOA' => ['Anchusa Home for the Aged, Elsies River, Cape Town', -33.910436, 18.568955],
         'Avondrust CPOA' => ['Avondrust Home for the Aged, Kraaifontein, Cape Town', -33.827029, 18.648119],
