@@ -68,6 +68,7 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])->prefix('admin')->
     Route::get('/quotes/{quote}', [AdminController::class, 'quoteShow']);
     Route::get('/sites', [AdminController::class, 'sites']);
     Route::post('/sites', [AdminController::class, 'storeSite']);
+    Route::post('/sites/bulk-upload', [AdminController::class, 'bulkUploadSites']);
     Route::post('/sites/{site}/toggle', [AdminController::class, 'toggleSite']);
     Route::post('/sites/{site}', [AdminController::class, 'updateSite']);
     Route::get('/dashboard', [DashboardController::class, 'index']);

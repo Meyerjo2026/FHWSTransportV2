@@ -19,16 +19,28 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
             </div>
             <div class="field">
                 <label>Type</label>
-                <select name="type">
-                    <option value="">— Select type —</option>
-                    @foreach ($typeOptions as $option)
-                        <option value="{{ $option }}">{{ $option }}</option>
-                    @endforeach
-                </select>
+                <input name="type" list="site-type-options" placeholder="e.g. CHC, or type a new category">
             </div>
             <button class="btn" type="submit">Add site</button>
         </form>
     </div>
+    <div class="card" style="max-width:640px;">
+        <h2>Bulk upload clinical sites</h2>
+        <p class="hint">CSV columns: <code>name, address, type, lat, lng</code>. Matches existing sites by name (updates them); new names are added. Only <code>name</code> is required.</p>
+        <form method="POST" action="/admin/sites/bulk-upload" enctype="multipart/form-data">
+            @csrf
+            <div class="field">
+                <label>CSV file</label>
+                <input type="file" name="file" accept=".csv" required>
+            </div>
+            <button class="btn" type="submit">Upload</button>
+        </form>
+    </div>
+    <datalist id="site-type-options">
+        @foreach ($typeOptions as $option)
+            <option value="{{ $option }}">
+        @endforeach
+    </datalist>
     <div class="card">
         <h2>Clinical sites <span class="badge-count">{{ $sites->count() }}</span></h2>
         <p class="hint">
@@ -97,12 +109,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                                     </div>
                                     <div class="field" style="margin:0;">
                                         <label>Type</label>
-                                        <select name="type">
-                                            <option value="">— Select type —</option>
-                                            @foreach ($typeOptions as $option)
-                                                <option value="{{ $option }}" @selected($site->type === $option)>{{ $option }}</option>
-                                            @endforeach
-                                        </select>
+                                        <input name="type" list="site-type-options" value="{{ $site->type }}" placeholder="e.g. CHC, or type a new category">
                                     </div>
                                     <div class="field" style="margin:0;width:120px;">
                                         <label>Latitude</label>

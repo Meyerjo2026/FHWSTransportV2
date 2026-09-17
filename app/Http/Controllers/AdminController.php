@@ -31,11 +31,22 @@ class AdminController extends Controller
             ->filter(fn ($group) => $group->count() > 1)
             ->keys();
 
+        // Types actually in use, plus the starter list — lets the filter
+        // and datalist include custom types an admin has typed in, not
+        // just the ones TransportOptions ships with.
+        $typeOptions = ClinicalSite::whereNotNull('type')
+            ->distinct()
+            ->pluck('type')
+            ->merge(TransportOptions::TYPE_OPTIONS)
+            ->unique()
+            ->sort()
+            ->values();
+
         return view('admin.sites', [
             'user' => Auth::user(),
             'sites' => $sites,
             'duplicateCoordKeys' => $duplicateCoordKeys,
-            'typeOptions' => TransportOptions::TYPE_OPTIONS,
+            'typeOptions' => $typeOptions,
             'selectedType' => $type,
         ]);
     }
@@ -45,7 +56,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:clinical_sites,name'],
             'address' => ['nullable', 'string', 'max:255'],
-            'type' => ['nullable', 'string', 'in:'.implode(',', TransportOptions::TYPE_OPTIONS)],
+            'type' => ['nullable', 'string', 'max:100'],
         ]);
 
         ClinicalSite::create($data);
@@ -65,7 +76,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:clinical_sites,name,'.$site->id],
             'address' => ['nullable', 'string', 'max:255'],
-            'type' => ['nullable', 'string', 'in:'.implode(',', TransportOptions::TYPE_OPTIONS)],
+            'type' => ['nullable', 'string', 'max:100'],
             'lat' => ['nullable', 'numeric', 'between:-90,90'],
             'lng' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
@@ -73,6 +84,42 @@ class AdminController extends Controller
         $site->update($data);
 
         return back()->with('success', "Updated clinical site: {$data['name']}.");
+    }
+
+    public function bulkUploadSites(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file'],
+        ]);
+
+        $rows = array_map('str_getcsv', file($request->file('file')->getRealPath()));
+        $header = array_map(fn ($h) => strtolower(trim($h)), array_shift($rows) ?? []);
+
+        $created = 0;
+        $updated = 0;
+        foreach ($rows as $row) {
+            if (! $row || count($row) < count($header)) {
+                continue;
+            }
+            $assoc = array_combine($header, array_map('trim', $row));
+            if (empty($assoc['name'])) {
+                continue;
+            }
+
+            $site = ClinicalSite::updateOrCreate(
+                ['name' => $assoc['name']],
+                [
+                    'address' => ($assoc['address'] ?? '') ?: null,
+                    'type' => ($assoc['type'] ?? '') ?: null,
+                    'lat' => is_numeric($assoc['lat'] ?? null) ? (float) $assoc['lat'] : null,
+                    'lng' => is_numeric($assoc['lng'] ?? null) ? (float) $assoc['lng'] : null,
+                ]
+            );
+
+            $site->wasRecentlyCreated ? $created++ : $updated++;
+        }
+
+        return back()->with('success', "Uploaded clinical sites: {$created} added, {$updated} updated.");
     }
 
     public function consolidate()
