@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClinicalSite;
+use App\Models\GroupAssignment;
 use App\Models\TripRequest;
 use App\Models\User;
-use App\Models\YearGroupAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,20 +14,31 @@ class StaffController extends Controller
 {
     public function approve()
     {
-        // A staff member only sees trip requests from the year group(s)
-        // they've been assigned as responsible for (see
-        // admin/year-groups); requests with no year set (bulk-uploaded
-        // without one, or "N/A" qualifications) are visible to everyone
-        // since they can't be attributed to a group. Admins bypass this
-        // entirely via their own review() view, which sees everything.
-        $myYears = YearGroupAssignment::where('staff_id', Auth::id())->pluck('year');
+        // A staff member only sees trip requests matching a year group,
+        // department, or qualification they've been assigned as
+        // responsible for (see admin/group-assignments); requests
+        // missing that field entirely (bulk-uploaded without one, or
+        // "N/A" qualifications) are visible to everyone since they
+        // can't be attributed to any group. Admins bypass this entirely
+        // via their own review() view, which sees everything.
+        $myAssignments = GroupAssignment::where('staff_id', Auth::id())->get();
+        $myYears = $myAssignments->where('type', 'year')->pluck('value');
+        $myDepartments = $myAssignments->where('type', 'department')->pluck('value');
+        $myQualifications = $myAssignments->where('type', 'qualification')->pluck('value');
+
+        $scope = function ($query) use ($myYears, $myDepartments, $myQualifications) {
+            $query->whereIn('year', $myYears)
+                ->orWhereIn('department', $myDepartments)
+                ->orWhereIn('qualification', $myQualifications)
+                ->orWhere(fn ($q) => $q->whereNull('year')->whereNull('department')->whereNull('qualification'));
+        };
 
         $pending = TripRequest::where('status', 'pending')
-            ->where(fn ($q) => $q->whereIn('year', $myYears)->orWhereNull('year'))
+            ->where($scope)
             ->orderBy('date')
             ->get();
         $recent = TripRequest::where('status', '!=', 'pending')
-            ->where(fn ($q) => $q->whereIn('year', $myYears)->orWhereNull('year'))
+            ->where($scope)
             ->orderByDesc('created_at')
             ->limit(15)
             ->get();
@@ -37,6 +48,8 @@ class StaffController extends Controller
             'pending' => $pending,
             'recent' => $recent,
             'myYears' => $myYears,
+            'myDepartments' => $myDepartments,
+            'myQualifications' => $myQualifications,
         ]);
     }
 

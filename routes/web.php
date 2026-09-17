@@ -66,8 +66,8 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])->prefix('admin')->
     Route::get('/quotes', [AdminController::class, 'quotesIndex']);
     Route::post('/quotes', [AdminController::class, 'generateQuote']);
     Route::get('/quotes/{quote}', [AdminController::class, 'quoteShow']);
-    Route::get('/year-groups', [AdminController::class, 'yearGroups']);
-    Route::post('/year-groups/{year}', [AdminController::class, 'updateYearGroup'])->where('year', '.*');
+    Route::get('/group-assignments', [AdminController::class, 'groupAssignments']);
+    Route::post('/group-assignments/{type}/{value}', [AdminController::class, 'updateGroupAssignment'])->where('value', '.*');
     Route::get('/sites', [AdminController::class, 'sites']);
     Route::post('/sites', [AdminController::class, 'storeSite']);
     Route::post('/sites/bulk-upload', [AdminController::class, 'bulkUploadSites']);

@@ -1,8 +1,14 @@
 <x-shell :user="$user" :active="'/staff'" :tabs="['/staff' => 'Approve Trips', '/staff/bulk' => 'Bulk Upload Trips', '/staff/students' => 'Bulk Upload Students']">
     <div class="card">
         <h2>Pending requests <span class="badge-count">{{ $pending->count() }}</span></h2>
-        @if ($myYears->isNotEmpty())
-            <p class="hint">Showing requests for: {{ $myYears->implode(', ') }} (plus any requests with no year set).</p>
+        @if ($myYears->isNotEmpty() || $myDepartments->isNotEmpty() || $myQualifications->isNotEmpty())
+            <p class="hint">
+                Showing requests matching your assignments:
+                @if ($myYears->isNotEmpty()) Year(s): {{ $myYears->implode(', ') }}. @endif
+                @if ($myDepartments->isNotEmpty()) Department(s): {{ $myDepartments->implode(', ') }}. @endif
+                @if ($myQualifications->isNotEmpty()) Qualification(s): {{ $myQualifications->implode(', ') }}. @endif
+                Plus any requests missing that field entirely.
+            </p>
         @endif
         @if ($pending->isEmpty())
             <div class="empty">No pending requests.</div>

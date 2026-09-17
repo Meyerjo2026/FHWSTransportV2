@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClinicalSite;
+use App\Models\GroupAssignment;
 use App\Models\Quote;
 use App\Models\TripRequest;
 use App\Models\User;
-use App\Models\YearGroupAssignment;
 use App\Support\TransportOptions;
 use App\Support\TripGrouper;
 use Illuminate\Http\Request;
@@ -14,31 +14,63 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
-    public function yearGroups()
+    /**
+     * Value options per assignment type, in the order shown on the
+     * Group Assignments page.
+     */
+    private const ASSIGNMENT_TYPES = [
+        'year' => ['label' => 'Year group', 'options' => TransportOptions::YEAR_OPTIONS],
+        'department' => ['label' => 'Department'],
+        'qualification' => ['label' => 'Qualification'],
+    ];
+
+    private function assignmentOptions(string $type): array
     {
-        $assignments = collect(TransportOptions::YEAR_OPTIONS)->mapWithKeys(function ($year) {
-            return [$year => YearGroupAssignment::with('staff')->firstWhere('year', $year)];
+        return match ($type) {
+            'year' => TransportOptions::YEAR_OPTIONS,
+            'department' => TransportOptions::departments(),
+            'qualification' => TransportOptions::allQualifications(),
+            default => [],
+        };
+    }
+
+    public function groupAssignments()
+    {
+        $staffMembers = User::where('role', 'staff')->orderBy('name')->get();
+
+        $sections = collect(array_keys(self::ASSIGNMENT_TYPES))->map(function ($type) {
+            $options = $this->assignmentOptions($type);
+            $existing = GroupAssignment::with('staff')->where('type', $type)->get()->keyBy('value');
+
+            return [
+                'type' => $type,
+                'label' => self::ASSIGNMENT_TYPES[$type]['label'],
+                'assignments' => collect($options)->mapWithKeys(fn ($value) => [$value => $existing->get($value)]),
+            ];
         });
 
-        return view('admin.year-groups', [
+        return view('admin.group-assignments', [
             'user' => Auth::user(),
-            'years' => TransportOptions::YEAR_OPTIONS,
-            'assignments' => $assignments,
-            'staffMembers' => User::where('role', 'staff')->orderBy('name')->get(),
+            'sections' => $sections,
+            'staffMembers' => $staffMembers,
         ]);
     }
 
-    public function updateYearGroup(Request $request, string $year)
+    public function updateGroupAssignment(Request $request, string $type, string $value)
     {
-        abort_unless(in_array($year, TransportOptions::YEAR_OPTIONS, true), 404);
+        abort_unless(array_key_exists($type, self::ASSIGNMENT_TYPES), 404);
+        abort_unless(in_array($value, $this->assignmentOptions($type), true), 404);
 
         $data = $request->validate([
             'staff_id' => ['nullable', 'exists:users,id'],
         ]);
 
-        YearGroupAssignment::updateOrCreate(['year' => $year], ['staff_id' => $data['staff_id'] ?: null]);
+        GroupAssignment::updateOrCreate(
+            ['type' => $type, 'value' => $value],
+            ['staff_id' => $data['staff_id'] ?: null]
+        );
 
-        return back()->with('success', "Updated staff assignment for {$year}.");
+        return back()->with('success', "Updated staff assignment for {$value}.");
     }
 
     public function sites(Request $request)

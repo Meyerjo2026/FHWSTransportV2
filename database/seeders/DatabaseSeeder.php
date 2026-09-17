@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\ClinicalSite;
+use App\Models\GroupAssignment;
 use App\Models\User;
-use App\Models\YearGroupAssignment;
 use App\Support\TransportOptions;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -43,12 +43,12 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Demo assignment so the staff-side year-group filtering has
+        // Demo assignment so the staff-side group filtering has
         // something to show out of the box: the demo staff account is
         // responsible for Year 2.
         $demoStaff = User::where('email', 'staff@cput.ac.za')->first();
         if ($demoStaff) {
-            YearGroupAssignment::updateOrCreate(['year' => 'Year 2'], ['staff_id' => $demoStaff->id]);
+            GroupAssignment::updateOrCreate(['type' => 'year', 'value' => 'Year 2'], ['staff_id' => $demoStaff->id]);
         }
     }
 }
