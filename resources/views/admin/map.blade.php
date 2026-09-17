@@ -5,6 +5,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
     <div class="card">
         <h2>Student placements</h2>
         <p class="muted" style="font-size:13px;">Approved and finalised trips, mapped by clinical site. Pickup point is always {{ $pickup['name'] }}. Trips already combined into a journey (via the <a href="/admin/journeys">AI Trip Planner</a>) are drawn as a single recommended travel route instead of separate pins.</p>
+        <p class="hint">Routes are plotted at street level — actual roads the vehicle would drive, not straight lines — via <a href="https://project-osrm.org" target="_blank" rel="noopener">OSRM</a>, a free public routing service (no API key). If it's briefly unavailable, a thin dashed straight line shows in its place until it responds.</p>
         <form method="GET" action="/admin/map">
             <div class="grid">
                 <div class="field">
@@ -64,7 +65,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
     @if ($journeys->isNotEmpty())
         <div class="card">
             <h3>Recommended travel routes for combined journeys</h3>
-            <p class="hint">Stop order is a nearest-neighbour route from {{ $pickup['name'] }} — not necessarily the mathematically shortest possible route, but a good fast approximation, and matches the route drawn on the map.</p>
+            <p class="hint">Stop order is a nearest-neighbour route from {{ $pickup['name'] }} — not necessarily the mathematically shortest possible route, but a good fast approximation, and matches the route drawn on the map. Leg distances below are straight-line estimates used to plan the order; the map itself shows the actual road route with real driving distance/time once it loads.</p>
             @foreach ($journeys as $j)
                 <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
@@ -132,7 +133,48 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
 
         const bounds = [[pickup.lat, pickup.lng]];
 
-        // Individual (not-yet-combined) placements: plain circle markers.
+        // Street-level route between an ordered list of {lat,lng} points via
+        // OSRM's free public routing API (no key required — same provider
+        // as the OpenStreetMap tiles above). Follows the given point order
+        // exactly (OSRM's /route endpoint doesn't reorder waypoints, unlike
+        // its /trip endpoint) rather than re-optimising it, since the order
+        // was already decided by the nearest-neighbour planner. Returns
+        // null on any failure so callers can fall back to a straight line.
+        async function fetchRoadRoute(points) {
+            const coords = points.map(p => p.lng + ',' + p.lat).join(';');
+            const url = 'https://router.project-osrm.org/route/v1/driving/' + coords + '?overview=full&geometries=geojson';
+            try {
+                const res = await fetch(url);
+                if (!res.ok) return null;
+                const data = await res.json();
+                if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
+                const route = data.routes[0];
+
+                return {
+                    latlngs: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+                    distanceKm: Math.round(route.distance / 100) / 10,
+                    durationMin: Math.round(route.duration / 60),
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // A small sequential queue so we're a polite, considerate client of
+        // OSRM's shared public demo server rather than firing every route
+        // request at once.
+        async function runSequentially(tasks) {
+            for (const task of tasks) {
+                await task();
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+
+        const routeTasks = [];
+
+        // Individual (not-yet-combined) placements: plain circle markers,
+        // each linked to pickup by a road route (straight dashed line shown
+        // immediately as a fallback while the real route loads).
         markers.forEach(m => {
             const radius = Math.min(10 + m.count * 2, 34);
             const circle = L.circleMarker([m.lat, m.lng], {
@@ -142,26 +184,36 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                 fillColor: '#8e3a92',
                 fillOpacity: 0.55,
             }).addTo(map);
-            circle.bindPopup(
-                '<strong>' + m.name + '</strong><br>' +
+            const popupBase = '<strong>' + m.name + '</strong><br>' +
                 (m.address ? m.address + '<br>' : '') +
                 m.count + ' student' + (m.count === 1 ? '' : 's') +
                 (m.departments.length ? '<br><span style="color:#6b6478;">' + m.departments.join(', ') + '</span>' : '') +
-                '<br><a href="https://www.google.com/maps/search/?api=1&query=' + m.lat + ',' + m.lng + '" target="_blank" rel="noopener">Verify on Google Maps &rarr;</a>'
-            );
-            L.polyline([[pickup.lat, pickup.lng], [m.lat, m.lng]], {
+                '<br><a href="https://www.google.com/maps/search/?api=1&query=' + m.lat + ',' + m.lng + '" target="_blank" rel="noopener">Verify on Google Maps &rarr;</a>';
+            circle.bindPopup(popupBase);
+            bounds.push([m.lat, m.lng]);
+
+            const fallback = L.polyline([[pickup.lat, pickup.lng], [m.lat, m.lng]], {
                 color: '#8e3a92', weight: 1, opacity: 0.35, dashArray: '4,5',
             }).addTo(map);
-            bounds.push([m.lat, m.lng]);
+
+            routeTasks.push(async () => {
+                const route = await fetchRoadRoute([pickup, m]);
+                if (!route) return;
+                map.removeLayer(fallback);
+                L.polyline(route.latlngs, { color: '#8e3a92', weight: 2, opacity: 0.6 }).addTo(map);
+                circle.bindPopup(popupBase + '<br><span style="color:#6b6478;">~' + route.distanceKm + 'km by road, ~' + route.durationMin + ' min</span>');
+            });
         });
 
-        // Combined journeys: a solid, numbered route from pickup through
-        // each stop in recommended order, and back.
+        // Combined journeys: a solid, numbered road route from pickup
+        // through each stop in recommended order, and back. Straight lines
+        // shown immediately as a fallback while the real route loads.
         journeys.forEach((journey, idx) => {
             const color = routeColors[idx % routeColors.length];
-            const path = [[pickup.lat, pickup.lng], ...journey.stops.map(s => [s.lat, s.lng]), [pickup.lat, pickup.lng]];
+            const waypoints = [pickup, ...journey.stops, pickup];
+            const path = waypoints.map(p => [p.lat, p.lng]);
 
-            L.polyline(path, { color, weight: 3, opacity: 0.85 }).addTo(map);
+            const fallback = L.polyline(path, { color, weight: 3, opacity: 0.85, dashArray: '4,5' }).addTo(map);
 
             journey.stops.forEach(stop => {
                 const icon = L.divIcon({
@@ -179,10 +231,20 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                 );
                 bounds.push([stop.lat, stop.lng]);
             });
+
+            routeTasks.push(async () => {
+                const route = await fetchRoadRoute(waypoints);
+                if (!route) return;
+                map.removeLayer(fallback);
+                const roadLine = L.polyline(route.latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
+                roadLine.bindPopup('<strong>' + journey.label + '</strong><br>~' + route.distanceKm + 'km by road, ~' + route.durationMin + ' min driving (excl. stops)');
+            });
         });
 
         if (bounds.length > 1) {
             map.fitBounds(bounds, { padding: [30, 30] });
         }
+
+        runSequentially(routeTasks);
     </script>
 </x-shell>
