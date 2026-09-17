@@ -51,7 +51,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                         </td>
                         <td><span class="pill {{ $site->active ? 'approved' : 'rejected' }}">{{ $site->active ? 'active' : 'inactive' }}</span></td>
                         <td style="white-space:nowrap;">
-                            <button type="button" class="btn small secondary" onclick="document.getElementById('site-edit-{{ $site->id }}').style.display='table-row'; this.closest('tr').style.display='none';">Edit</button>
+                            <button type="button" class="btn small secondary" onclick="showSiteEdit({{ $site->id }}, {{ $site->lat ?? 'null' }}, {{ $site->lng ?? 'null' }})">Edit</button>
                             <form method="POST" action="/admin/sites/{{ $site->id }}/toggle" style="display:inline;">
                                 @csrf
                                 <button class="btn small secondary" type="submit">{{ $site->active ? 'Deactivate' : 'Activate' }}</button>
@@ -60,26 +60,40 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                     </tr>
                     <tr id="site-edit-{{ $site->id }}" style="display:none;">
                         <td colspan="5">
-                            <form method="POST" action="/admin/sites/{{ $site->id }}" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                            <form method="POST" action="/admin/sites/{{ $site->id }}" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
                                 @csrf
-                                <div class="field" style="margin:0;">
-                                    <label>Site name</label>
-                                    <input name="name" value="{{ $site->name }}" required>
+                                <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                                    <div class="field" style="margin:0;">
+                                        <label>Site name</label>
+                                        <input name="name" value="{{ $site->name }}" required>
+                                    </div>
+                                    <div class="field" style="margin:0;">
+                                        <label>Address</label>
+                                        <input name="address" value="{{ $site->address }}">
+                                    </div>
+                                    <div class="field" style="margin:0;width:120px;">
+                                        <label>Latitude</label>
+                                        <input name="lat" id="lat-{{ $site->id }}" value="{{ $site->lat }}">
+                                    </div>
+                                    <div class="field" style="margin:0;width:120px;">
+                                        <label>Longitude</label>
+                                        <input name="lng" id="lng-{{ $site->id }}" value="{{ $site->lng }}">
+                                    </div>
+                                    <button class="btn small" type="submit">Save</button>
+                                    <button type="button" class="btn small secondary" onclick="document.getElementById('site-row-{{ $site->id }}').style.display='table-row'; document.getElementById('site-edit-{{ $site->id }}').style.display='none';">Cancel</button>
                                 </div>
-                                <div class="field" style="margin:0;">
-                                    <label>Address</label>
-                                    <input name="address" value="{{ $site->address }}">
+                                <div style="width:100%;max-width:480px;">
+                                    <div class="field" style="margin:0 0 6px 0;">
+                                        <label>Search a place to move the pin</label>
+                                        <div style="display:flex;gap:6px;">
+                                            <input type="text" id="search-{{ $site->id }}" placeholder="e.g. Tygerberg Hospital, Parow" style="flex:1;">
+                                            <button type="button" class="btn small secondary" onclick="searchSitePlace({{ $site->id }})">Search</button>
+                                        </div>
+                                        <div id="search-results-{{ $site->id }}" class="muted" style="font-size:12px;"></div>
+                                    </div>
+                                    <div id="site-map-{{ $site->id }}" style="width:100%;height:260px;border:1px solid var(--border, #ddd);"></div>
+                                    <p class="hint" style="margin-top:4px;">Drag the pin, or search above, to set the exact coordinates. Cross-check against satellite/street view before saving.</p>
                                 </div>
-                                <div class="field" style="margin:0;width:120px;">
-                                    <label>Latitude</label>
-                                    <input name="lat" value="{{ $site->lat }}">
-                                </div>
-                                <div class="field" style="margin:0;width:120px;">
-                                    <label>Longitude</label>
-                                    <input name="lng" value="{{ $site->lng }}">
-                                </div>
-                                <button class="btn small" type="submit">Save</button>
-                                <button type="button" class="btn small secondary" onclick="document.getElementById('site-row-{{ $site->id }}').style.display='table-row'; this.closest('tr').style.display='none';">Cancel</button>
                             </form>
                         </td>
                     </tr>
@@ -87,4 +101,82 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
             </tbody>
         </table>
     </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const siteMaps = {};
+
+        function showSiteEdit(id, lat, lng) {
+            document.getElementById('site-row-' + id).style.display = 'none';
+            const editRow = document.getElementById('site-edit-' + id);
+            editRow.style.display = 'table-row';
+
+            if (!siteMaps[id]) {
+                const startLat = lat ?? {{ \App\Support\TransportOptions::PICKUP_LAT }};
+                const startLng = lng ?? {{ \App\Support\TransportOptions::PICKUP_LNG }};
+
+                const map = L.map('site-map-' + id).setView([startLat, startLng], lat ? 15 : 11);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                }).addTo(map);
+
+                const marker = L.marker([startLat, startLng], { draggable: true }).addTo(map);
+                marker.on('dragend', () => {
+                    const pos = marker.getLatLng();
+                    document.getElementById('lat-' + id).value = pos.lat.toFixed(6);
+                    document.getElementById('lng-' + id).value = pos.lng.toFixed(6);
+                });
+                map.on('click', (e) => {
+                    marker.setLatLng(e.latlng);
+                    document.getElementById('lat-' + id).value = e.latlng.lat.toFixed(6);
+                    document.getElementById('lng-' + id).value = e.latlng.lng.toFixed(6);
+                });
+
+                siteMaps[id] = { map, marker };
+
+                // Leaflet needs a nudge once its container becomes visible.
+                setTimeout(() => map.invalidateSize(), 50);
+            } else {
+                setTimeout(() => siteMaps[id].map.invalidateSize(), 50);
+            }
+        }
+
+        async function searchSitePlace(id) {
+            const query = document.getElementById('search-' + id).value.trim();
+            const resultsEl = document.getElementById('search-results-' + id);
+            if (!query) return;
+
+            resultsEl.textContent = 'Searching…';
+            try {
+                const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&q=' + encodeURIComponent(query + ', South Africa'));
+                const results = await res.json();
+
+                if (!results.length) {
+                    resultsEl.textContent = 'No matches found.';
+                    return;
+                }
+
+                resultsEl.innerHTML = '';
+                results.forEach((r) => {
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.textContent = r.display_name;
+                    link.style.display = 'block';
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+                        siteMaps[id].map.setView([lat, lng], 16);
+                        siteMaps[id].marker.setLatLng([lat, lng]);
+                        document.getElementById('lat-' + id).value = lat.toFixed(6);
+                        document.getElementById('lng-' + id).value = lng.toFixed(6);
+                        resultsEl.textContent = '';
+                    };
+                    resultsEl.appendChild(link);
+                });
+            } catch (e) {
+                resultsEl.textContent = 'Search failed — try again.';
+            }
+        }
+    </script>
 </x-shell>
