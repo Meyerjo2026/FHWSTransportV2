@@ -6,13 +6,16 @@ class TransportOptions
 {
     /**
      * The pickup point for every trip — students are always collected
-     * from and returned to CPUT Bellville Campus.
+     * from and returned to CPUT Bellville Campus. Coordinates verified
+     * against both OpenStreetMap/Nominatim and Google Maps (agree
+     * within ~70m) — the previous values were ~1.2km off, closer to
+     * UWC than CPUT's own Bellville Campus grounds.
      */
-    public const PICKUP_POINT = 'CPUT Bellville Campus';
+    public const PICKUP_POINT = 'Cape Peninsula University of Technology (Bellville Campus)';
 
-    public const PICKUP_LAT = -33.932098;
+    public const PICKUP_LAT = -33.931874;
 
-    public const PICKUP_LNG = 18.629311;
+    public const PICKUP_LNG = 18.642764;
 
     /**
      * Seed data for clinical_sites: name => [address, lat, lng].

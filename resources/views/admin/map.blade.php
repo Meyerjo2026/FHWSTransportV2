@@ -126,7 +126,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
 
         const pickupIcon = L.divIcon({
             className: '',
-            html: '<div style="background:#1c1622;color:#fff;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3);">CPUT Bellville Campus</div>',
+            html: '<div style="background:#1c1622;color:#fff;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3);">' + pickup.name + '</div>',
             iconSize: [0, 0],
         });
         L.marker([pickup.lat, pickup.lng], {icon: pickupIcon}).addTo(map);

@@ -18,6 +18,7 @@ class StudentController extends Controller
             'timeSlots' => TransportOptions::TIME_SLOTS,
             'departments' => TransportOptions::departments(),
             'qualificationsByDepartment' => TransportOptions::QUALIFICATIONS_BY_DEPARTMENT,
+            'pickupPoint' => TransportOptions::PICKUP_POINT,
         ]);
     }
 

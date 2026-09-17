@@ -22,7 +22,7 @@
             </div>
             <div class="field">
                 <label>Pickup point</label>
-                <input value="CPUT Bellville Campus" disabled>
+                <input value="{{ $pickupPoint }}" disabled>
             </div>
             <div class="grid">
                 <div class="field">
