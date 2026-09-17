@@ -18,6 +18,7 @@ class TripRequest extends Model
         'notes',
         'department',
         'qualification',
+        'year',
         'status',
         'source',
         'uploaded_by',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClinicalSite;
 use App\Models\TripRequest;
 use App\Models\User;
+use App\Models\YearGroupAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,8 +14,20 @@ class StaffController extends Controller
 {
     public function approve()
     {
-        $pending = TripRequest::where('status', 'pending')->orderBy('date')->get();
+        // A staff member only sees trip requests from the year group(s)
+        // they've been assigned as responsible for (see
+        // admin/year-groups); requests with no year set (bulk-uploaded
+        // without one, or "N/A" qualifications) are visible to everyone
+        // since they can't be attributed to a group. Admins bypass this
+        // entirely via their own review() view, which sees everything.
+        $myYears = YearGroupAssignment::where('staff_id', Auth::id())->pluck('year');
+
+        $pending = TripRequest::where('status', 'pending')
+            ->where(fn ($q) => $q->whereIn('year', $myYears)->orWhereNull('year'))
+            ->orderBy('date')
+            ->get();
         $recent = TripRequest::where('status', '!=', 'pending')
+            ->where(fn ($q) => $q->whereIn('year', $myYears)->orWhereNull('year'))
             ->orderByDesc('created_at')
             ->limit(15)
             ->get();
@@ -23,6 +36,7 @@ class StaffController extends Controller
             'user' => Auth::user(),
             'pending' => $pending,
             'recent' => $recent,
+            'myYears' => $myYears,
         ]);
     }
 
@@ -74,6 +88,7 @@ class StaffController extends Controller
                 'time' => $assoc['time'],
                 'department' => ($assoc['department'] ?? '') ?: null,
                 'qualification' => ($assoc['qualification'] ?? '') ?: null,
+                'year' => ($assoc['year'] ?? '') ?: null,
                 'notes' => ($assoc['notes'] ?? '') ?: null,
                 'status' => 'approved',
                 'source' => 'bulk',

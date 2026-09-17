@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\ClinicalSite;
 use App\Models\Quote;
 use App\Models\TripRequest;
+use App\Models\User;
+use App\Models\YearGroupAssignment;
 use App\Support\TransportOptions;
 use App\Support\TripGrouper;
 use Illuminate\Http\Request;
@@ -12,6 +14,33 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
+    public function yearGroups()
+    {
+        $assignments = collect(TransportOptions::YEAR_OPTIONS)->mapWithKeys(function ($year) {
+            return [$year => YearGroupAssignment::with('staff')->firstWhere('year', $year)];
+        });
+
+        return view('admin.year-groups', [
+            'user' => Auth::user(),
+            'years' => TransportOptions::YEAR_OPTIONS,
+            'assignments' => $assignments,
+            'staffMembers' => User::where('role', 'staff')->orderBy('name')->get(),
+        ]);
+    }
+
+    public function updateYearGroup(Request $request, string $year)
+    {
+        abort_unless(in_array($year, TransportOptions::YEAR_OPTIONS, true), 404);
+
+        $data = $request->validate([
+            'staff_id' => ['nullable', 'exists:users,id'],
+        ]);
+
+        YearGroupAssignment::updateOrCreate(['year' => $year], ['staff_id' => $data['staff_id'] ?: null]);
+
+        return back()->with('success', "Updated staff assignment for {$year}.");
+    }
+
     public function sites(Request $request)
     {
         $type = $request->query('type');

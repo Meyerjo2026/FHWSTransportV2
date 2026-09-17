@@ -18,6 +18,10 @@ class StudentController extends Controller
             'timeSlots' => TransportOptions::TIME_SLOTS,
             'departments' => TransportOptions::departments(),
             'qualificationsByDepartment' => TransportOptions::QUALIFICATIONS_BY_DEPARTMENT,
+            'yearsByQualification' => array_combine(
+                TransportOptions::allQualifications(),
+                array_map(fn ($q) => TransportOptions::yearsFor($q), TransportOptions::allQualifications())
+            ),
             'pickupPoint' => TransportOptions::PICKUP_POINT,
         ]);
     }
@@ -30,11 +34,16 @@ class StudentController extends Controller
             'time' => ['required', 'string'],
             'department' => ['required', 'string', 'in:'.implode(',', TransportOptions::departments())],
             'qualification' => ['required', 'string'],
+            'year' => ['required', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
 
         if (! TransportOptions::isValidPair($data['department'], $data['qualification'])) {
             return back()->withErrors(['qualification' => 'Please select a qualification that belongs to the chosen department.'])->withInput();
+        }
+
+        if (! TransportOptions::isValidYear($data['qualification'], $data['year'])) {
+            return back()->withErrors(['year' => 'Please select a year that applies to the chosen qualification.'])->withInput();
         }
 
         $user = Auth::user();
@@ -51,6 +60,7 @@ class StudentController extends Controller
             'time' => $data['time'],
             'department' => $data['department'],
             'qualification' => $data['qualification'],
+            'year' => $data['year'],
             'notes' => $data['notes'] ?? null,
             'status' => 'pending',
             'source' => 'manual',

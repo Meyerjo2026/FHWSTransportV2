@@ -1,5 +1,5 @@
 @php
-$tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject', '/admin/journeys' => 'AI Trip Planner', '/admin/finalise' => 'Finalise Trips', '/admin/quotes' => 'Create RFQ', '/admin/sites' => 'Clinical Sites', '/admin/map' => 'Map'];
+$tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/admin/review' => 'Approve / Reject', '/admin/journeys' => 'AI Trip Planner', '/admin/finalise' => 'Finalise Trips', '/admin/quotes' => 'Create RFQ', '/admin/sites' => 'Clinical Sites', '/admin/map' => 'Map', '/admin/year-groups' => 'Year Groups'];
 @endphp
 <x-shell :user="$user" :active="'/admin/review'" :tabs="$tabs">
     <div class="card">
@@ -8,7 +8,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
             <div class="empty">Nothing pending.</div>
         @else
             <table>
-                <thead><tr><th>Student</th><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th></th></tr></thead>
+                <thead><tr><th>Student</th><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th>Year</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($pending as $r)
                         <tr>
@@ -17,6 +17,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                             <td>{{ $r->time }}</td>
                             <td>{{ $r->site }}</td>
                             <td class="muted">{{ $r->department }}</td>
+                            <td class="muted">{{ $r->year }}</td>
                             <td class="row-actions">
                                 <form method="POST" action="/requests/{{ $r->id }}/status">
                                     @csrf
@@ -41,7 +42,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
             <div class="empty">None.</div>
         @else
             <table>
-                <thead><tr><th>Student</th><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th></th></tr></thead>
+                <thead><tr><th>Student</th><th>Date</th><th>Time</th><th>Site</th><th>Department</th><th>Year</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($approved as $r)
                         <tr>
@@ -50,6 +51,7 @@ $tabs = ['/admin/dashboard' => 'Dashboard', '/admin' => 'Consolidate Trips', '/a
                             <td>{{ $r->time }}</td>
                             <td>{{ $r->site }}</td>
                             <td class="muted">{{ $r->department }}</td>
+                            <td class="muted">{{ $r->year }}</td>
                             <td class="row-actions">
                                 <form method="POST" action="/requests/{{ $r->id }}/status">
                                     @csrf

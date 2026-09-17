@@ -267,4 +267,45 @@ class TransportOptions
     {
         return in_array($qualification, self::qualificationsFor($department), true);
     }
+
+    public const YEAR_OPTIONS = ['Year 0', 'Year 1', 'Year 2', 'Year 3', 'Year 4'];
+
+    /**
+     * Which study years apply to a given qualification, so the year
+     * dropdown on the student request form only offers years that make
+     * sense for what they're studying — a Higher Certificate has one
+     * year, a Bachelor with an Extended Curriculum Programme (ECP) has
+     * a Year 0 foundation year, an Articulation entry starts at Year 2,
+     * etc. Matched by keyword rather than a hand-built list per
+     * qualification since the naming conventions in
+     * QUALIFICATIONS_BY_DEPARTMENT are consistent.
+     */
+    public static function yearsFor(?string $qualification): array
+    {
+        if (! $qualification || str_contains($qualification, 'Non-Diploma/Degree')) {
+            return ['N/A'];
+        }
+        if (str_contains($qualification, 'Higher Certificate')) {
+            return ['Year 1'];
+        }
+        if (str_contains($qualification, 'Extended Curriculum Programme')) {
+            return ['Year 0', 'Year 1', 'Year 2', 'Year 3', 'Year 4'];
+        }
+        if (str_contains($qualification, 'Articulation')) {
+            return ['Year 2', 'Year 3', 'Year 4'];
+        }
+        if (str_contains($qualification, 'Advanced Diploma')) {
+            return ['Year 4'];
+        }
+        if (str_contains($qualification, 'Diploma')) {
+            return ['Year 1', 'Year 2', 'Year 3'];
+        }
+
+        return ['Year 1', 'Year 2', 'Year 3', 'Year 4'];
+    }
+
+    public static function isValidYear(string $qualification, string $year): bool
+    {
+        return in_array($year, self::yearsFor($qualification), true);
+    }
 }

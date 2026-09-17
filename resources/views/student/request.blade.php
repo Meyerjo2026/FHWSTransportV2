@@ -52,13 +52,20 @@
                 </div>
                 <div class="field">
                     <label>Qualification (studying)</label>
-                    <select name="qualification" id="qualification" required disabled>
+                    <select name="qualification" id="qualification" required disabled onchange="populateYears()">
                         <option value="" disabled selected>Select a department first</option>
                     </select>
                 </div>
             </div>
+            <div class="field">
+                <label>Current year</label>
+                <select name="year" id="year" required disabled>
+                    <option value="" disabled selected>Select a qualification first</option>
+                </select>
+            </div>
             <script>
                 const qualificationsByDepartment = @json($qualificationsByDepartment);
+                const yearsByQualification = @json($yearsByQualification);
                 function populateQualifications() {
                     const deptSelect = document.getElementById('department');
                     const qualSelect = document.getElementById('qualification');
@@ -73,6 +80,22 @@
                     qualSelect.appendChild(new Option('Select a qualification', '', true, true));
                     qualSelect.options[0].disabled = true;
                     quals.forEach(q => qualSelect.appendChild(new Option(q, q)));
+                    populateYears();
+                }
+                function populateYears() {
+                    const qualSelect = document.getElementById('qualification');
+                    const yearSelect = document.getElementById('year');
+                    const years = yearsByQualification[qualSelect.value] || [];
+                    yearSelect.innerHTML = '';
+                    if (years.length === 0) {
+                        yearSelect.disabled = true;
+                        yearSelect.appendChild(new Option('Select a qualification first', '', true, true));
+                        return;
+                    }
+                    yearSelect.disabled = false;
+                    yearSelect.appendChild(new Option('Select a year', '', true, true));
+                    yearSelect.options[0].disabled = true;
+                    years.forEach(y => yearSelect.appendChild(new Option(y, y)));
                 }
             </script>
             <div class="field">
