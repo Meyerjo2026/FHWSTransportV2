@@ -21,21 +21,18 @@ RUN apk add --no-cache libzip libpq icu-libs oniguruma nginx tini
 # Copy Composer binary
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Create non-root app user
-RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
-
 WORKDIR /var/www/html
 
 # Create storage and cache directories
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
-    && chown -R appuser:appuser storage bootstrap/cache
+    && chmod -R 777 storage bootstrap/cache
 
 # Install PHP dependencies (separate layer for cache efficiency)
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --optimize-autoloader
 
 # Copy application code
-COPY --chown=appuser:appuser . .
+COPY . .
 
 # Copy built assets from Node stage
 COPY --from=assets /app/public/build ./public/build
