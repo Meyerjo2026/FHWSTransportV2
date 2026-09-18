@@ -1,5 +1,8 @@
 <?php
 
+// CRITICAL: Trust proxies before any request handling
+require __DIR__.'/proxies.php';
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
