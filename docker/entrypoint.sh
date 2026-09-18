@@ -5,6 +5,9 @@ echo "Creating Nginx temp directories..."
 mkdir -p /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 chmod 755 /tmp/nginx /tmp/nginx/*
 
+echo "Fixing storage permissions..."
+chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
+
 echo "Waiting for database..."
 tries=0
 until php artisan db:show > /dev/null 2>&1 || [ "$tries" -ge 30 ]; do
