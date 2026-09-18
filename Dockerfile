@@ -58,6 +58,11 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/zzz-docker.ini
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Force stderr logging — never write to a file in the container
+ENV LOG_CHANNEL=stderr \
+    TRUSTED_PROXIES=* \
+    LOG_LEVEL=warning
+
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
     CMD wget -qO- http://localhost:8080/up || exit 1

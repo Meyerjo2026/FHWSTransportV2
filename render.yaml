@@ -22,6 +22,10 @@ services:
         sync: false
       - key: APP_URL
         value: https://fhwstransportv2-1.onrender.com
+      - key: RENDER
+        value: "true"
+      - key: TRUSTED_PROXIES
+        value: "*"
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL

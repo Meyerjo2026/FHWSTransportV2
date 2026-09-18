@@ -9,6 +9,13 @@ echo "Ensuring storage permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true
 
+# Force LOG_CHANNEL=stderr so Laravel never tries to write a log file.
+# This overrides whatever is cached or set in env — no file = no permission error.
+export LOG_CHANNEL=stderr
+
+echo "Clearing stale config cache (will re-cache with correct env)..."
+php artisan config:clear 2>&1 || true
+
 echo "Waiting for database..."
 tries=0
 until php artisan db:show > /dev/null 2>&1 || [ "$tries" -ge 30 ]; do
