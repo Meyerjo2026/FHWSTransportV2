@@ -5,8 +5,9 @@ echo "Creating Nginx temp directories..."
 mkdir -p /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 chmod 755 /tmp/nginx /tmp/nginx/*
 
-echo "Fixing storage permissions..."
-chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
+echo "Ensuring storage permissions..."
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true
 
 echo "Waiting for database..."
 tries=0
@@ -16,7 +17,7 @@ until php artisan db:show > /dev/null 2>&1 || [ "$tries" -ge 30 ]; do
 done
 
 if [ "$tries" -ge 30 ]; then
-    echo "Database did not become reachable in time; continuing anyway (migrate will surface the real error)."
+    echo "Database did not become reachable in time; continuing anyway."
 fi
 
 echo "Running migrations..."
@@ -37,7 +38,6 @@ php artisan storage:link || true
 echo "Starting PHP-FPM..."
 php-fpm -D
 
-# Give services a moment to start
 sleep 2
 
 echo "Checking PHP-FPM status..."

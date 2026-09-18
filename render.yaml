@@ -8,7 +8,7 @@ services:
   - type: web
     name: fhws-transport
     runtime: docker
-    image: meyerjo2024/fhws-transport:latest
+    dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /up
     envVars:
@@ -18,13 +18,12 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
-      # Generate locally with `php artisan key:generate --show` and paste
-      # the result (including the "base64:" prefix) into the Render
-      # dashboard — not stored here so it never ends up in git.
       - key: APP_KEY
         sync: false
+      - key: APP_URL
+        value: https://fhwstransportv2-1.onrender.com
       - key: LOG_CHANNEL
-        value: stack
+        value: stderr
       - key: LOG_LEVEL
         value: warning
       - key: SESSION_DRIVER
