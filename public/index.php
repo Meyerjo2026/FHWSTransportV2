@@ -13,10 +13,17 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 // Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
 
-// CRITICAL: Trust proxies BEFORE Laravel touches the request
-if (getenv('APP_ENV') === 'production' || getenv('RENDER')) {
+// Normalise empty REMOTE_ADDR — Render's load balancer can deliver requests
+// with REMOTE_ADDR='' which causes Symfony IpUtils::checkIp4() to crash.
+if (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] === '') {
+    $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+}
+
+// Trust proxies BEFORE Laravel touches the request.
+// Use explicit CIDRs — never '*', which can produce null CIDR entries internally.
+if (getenv('APP_ENV') === 'production' || getenv('APP_ENV') === 'staging' || getenv('RENDER')) {
     \Illuminate\Http\Request::setTrustedProxies(
-        ['*'],
+        ['127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
         \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
         \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
         \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
@@ -28,20 +35,4 @@ if (getenv('APP_ENV') === 'production' || getenv('RENDER')) {
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
-try {
-    $request = Request::capture();
-    // Ensure proxies are still set
-    if (getenv('APP_ENV') === 'production' || getenv('RENDER')) {
-        \Illuminate\Http\Request::setTrustedProxies(
-            ['*'],
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_AWS_ELB
-        );
-    }
-    $app->handleRequest($request);
-} catch (Throwable $e) {
-    error_log("Fatal error in index.php: " . $e->getMessage());
-    throw $e;
-}
+$app->handleRequest(Request::capture());

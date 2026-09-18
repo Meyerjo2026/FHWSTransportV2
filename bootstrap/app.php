@@ -1,6 +1,6 @@
 <?php
 
-// CRITICAL: Trust proxies before any request handling
+// Trust proxies before any request handling (explicit CIDRs, never '*')
 require __DIR__.'/proxies.php';
 
 use Illuminate\Foundation\Application;
@@ -14,11 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Render (like most PaaS providers) terminates TLS at its edge and
-        // forwards plain HTTP to the container, so Laravel must trust that
-        // proxy to know the original request was HTTPS — otherwise it
-        // generates http:// URLs and secure-cookie/session behaviour breaks.
-        $middleware->trustProxies(at: '*');
+        // Proxy trust is handled in bootstrap/proxies.php and public/index.php
+        // using explicit RFC-1918 CIDRs. Do NOT call trustProxies(at: '*') here —
+        // the '*' wildcard can produce null CIDR entries in Symfony's IpUtils.
 
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
