@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Response;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -29,21 +30,33 @@ class Handler extends ExceptionHandler
     }
 
     /**
-     * Prepare exception for rendering.
-     * Override to avoid isSecure() check which fails with proxy config.
+     * Render an exception into an HTTP response.
+     * Override to avoid proxy validation issues in production.
      */
-    protected function prepareResponse($request, Throwable $e)
+    public function render($request, Throwable $e)
     {
+        // Convert non-HTTP exceptions to HTTP exceptions
         if (!$this->isHttpException($e)) {
-            $e = new \Symfony\Component\HttpKernel\Exception\HttpException(500, 'Server Error', $e);
+            $e = new \Symfony\Component\HttpKernel\Exception\HttpException(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'Server Error',
+                $e
+            );
         }
 
-        // Don't call Response->prepare() which triggers isSecure() with broken proxy config
-        // Just return a basic response
-        return response(
-            $this->renderHttpException($e),
-            $this->isHttpException($e) ? $e->getStatusCode() : 500,
-            $this->isHttpException($e) ? $e->getHeaders() : []
-        );
+        // In production, skip Response::prepare() which triggers isSecure()
+        // and just return a simple JSON or text response
+        if (app()->environment('production')) {
+            return response(
+                json_encode([
+                    'error' => $this->isHttpException($e) ? $e->getStatusCode() : 500
+                ]),
+                $this->isHttpException($e) ? $e->getStatusCode() : 500,
+                ['Content-Type' => 'application/json']
+            );
+        }
+
+        // In development, use the default handler
+        return parent::render($request, $e);
     }
 }
