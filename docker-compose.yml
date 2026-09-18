@@ -2,12 +2,13 @@ services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "8080:8080"
     environment:
       APP_NAME: "Transport Herd"
       APP_ENV: dev
       APP_DEBUG: "true"
       APP_URL: http://localhost:8080
+      NGINX_PORT: 8080
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306

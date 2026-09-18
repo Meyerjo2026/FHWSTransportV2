@@ -1,42 +1,57 @@
-# --- Stage 1: build front-end assets (Breeze/Vite scaffold; the app's own
-# pages use static CSS, but this keeps any @vite() usage from breaking) ---
+# --- Stage 1: build front-end assets ---
 FROM node:20-alpine AS assets
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY resources ./resources
-COPY vite.config.js ./
-RUN npm run build
+COPY postcss.config.js tailwind.config.js vite.config.js ./
+RUN npm run build && npm prune --production
 
-# --- Stage 2: PHP application image ---
-FROM php:8.3-apache
+# --- Stage 2: PHP application runtime ---
+FROM php:8.3-fpm-alpine
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libzip-dev libpq-dev libicu-dev libonig-dev \
-    && docker-php-ext-install -j"$(nproc)" \
-        pdo_pgsql pdo_mysql zip intl \
-    && a2enmod rewrite \
-    && rm -rf /var/lib/apt/lists/*
+# Install build dependencies, install extensions, then clean up build tools
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS libzip-dev libpq-dev icu-dev oniguruma-dev \
+    && docker-php-ext-install -j"$(nproc)" pdo_pgsql pdo_mysql zip intl \
+    && apk del .build-deps
 
+# Install production runtime dependencies only
+RUN apk add --no-cache libzip libpq icu-libs oniguruma nginx tini
+
+# Copy Composer binary
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Create non-root app user
+RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
 
 WORKDIR /var/www/html
 
-# Apache should serve Laravel's public/ directory, not the app root.
-COPY docker/apache-app.conf /etc/apache2/sites-available/000-default.conf
+# Create directories with correct ownership first
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chown -R appuser:appuser storage bootstrap/cache
 
+# Install PHP dependencies (separate layer for cache efficiency)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --optimize-autoloader
 
-COPY . .
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+# Copy built assets from Node stage
 COPY --from=assets /app/public/build ./public/build
 
-RUN composer dump-autoload --optimize \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Generate optimized autoloader
+RUN composer dump-autoload --optimize --no-dev --apcu
 
+# Copy Nginx configuration
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 80
-ENTRYPOINT ["entrypoint.sh"]
-CMD ["apache2-foreground"]
+USER appuser
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:8080/up || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]

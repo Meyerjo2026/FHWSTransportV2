@@ -8,8 +8,7 @@ services:
   - type: web
     name: fhws-transport
     runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    image: meyerjo2024/fhws-transport:latest
     plan: free
     healthCheckPath: /up
     envVars:
