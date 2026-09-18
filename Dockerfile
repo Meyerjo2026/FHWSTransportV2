@@ -27,8 +27,8 @@ RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
 WORKDIR /var/www/html
 
 # Create directories with correct ownership first
-RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
-    && chown -R appuser:appuser storage bootstrap/cache
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi \
+    && chown -R appuser:appuser storage bootstrap/cache /tmp/nginx
 
 # Install PHP dependencies (separate layer for cache efficiency)
 COPY composer.json composer.lock ./
