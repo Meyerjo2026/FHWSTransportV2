@@ -42,6 +42,8 @@ RUN composer dump-autoload --optimize --no-dev --apcu
 
 # Copy Nginx configuration
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zzz-docker.conf
+COPY docker/php.ini /usr/local/etc/php/conf.d/zzz-docker.ini
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
