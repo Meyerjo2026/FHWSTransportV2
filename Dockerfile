@@ -23,7 +23,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Install PHP dependencies (separate layer for cache efficiency)
+# Install PHP dependencies
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --optimize-autoloader
 
@@ -33,10 +33,7 @@ COPY . .
 # Copy built assets from Node stage
 COPY --from=assets /app/public/build ./public/build
 
-# Generate optimized autoloader
-RUN composer dump-autoload --optimize --no-dev --apcu
-
-# Create ALL storage directories and set correct ownership for www-data
+# Create ALL required directories BEFORE composer dump-autoload (which runs artisan)
 RUN mkdir -p storage/framework/cache/data \
              storage/framework/sessions \
              storage/framework/views \
@@ -45,10 +42,16 @@ RUN mkdir -p storage/framework/cache/data \
              storage/app/public \
              storage/app/private \
              bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache public \
+    && chmod -R 777 storage bootstrap/cache
+
+# Generate optimized autoloader (needs bootstrap/cache to be writable)
+RUN composer dump-autoload --optimize --no-dev --apcu
+
+# Set correct ownership for www-data (PHP-FPM user)
+RUN chown -R www-data:www-data storage bootstrap/cache public \
     && chmod -R 775 storage bootstrap/cache
 
-# Copy Nginx and PHP config
+# Copy config files
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zzz-docker.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/zzz-docker.ini
