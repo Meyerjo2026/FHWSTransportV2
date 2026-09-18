@@ -20,18 +20,28 @@ if [ "$tries" -ge 30 ]; then
 fi
 
 echo "Running migrations..."
-php artisan migrate --force
+php artisan migrate --force 2>&1 | tail -20
 
 echo "Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+php artisan config:cache 2>&1
+
+echo "Caching routes..."
+php artisan route:cache 2>&1
+
+echo "Caching views..."
+php artisan view:cache 2>&1
 
 echo "Ensuring storage symlink..."
 php artisan storage:link || true
 
 echo "Starting PHP-FPM..."
 php-fpm -D
+
+# Give services a moment to start
+sleep 2
+
+echo "Checking PHP-FPM status..."
+ps aux | grep -i "php-fpm" | grep -v grep || echo "PHP-FPM not running!"
 
 echo "Starting Nginx..."
 exec nginx -g 'daemon off;'
