@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+echo "Creating Nginx temp directories..."
+mkdir -p /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
+chmod 755 /tmp/nginx /tmp/nginx/*
+chown -R appuser:appuser /tmp/nginx
+
 echo "Waiting for database..."
 tries=0
 until php artisan db:show > /dev/null 2>&1 || [ "$tries" -ge 30 ]; do
@@ -23,4 +28,5 @@ php artisan view:cache
 echo "Ensuring storage symlink..."
 php artisan storage:link || true
 
-exec "$@"
+echo "Starting services..."
+exec su - appuser -c "php-fpm -D && nginx -g 'daemon off;'"

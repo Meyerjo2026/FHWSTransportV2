@@ -26,11 +26,9 @@ RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
 
 WORKDIR /var/www/html
 
-# Create all directories as root with proper ownership
+# Create storage and cache directories
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
-    && mkdir -p /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi \
-    && chown -R appuser:appuser storage bootstrap/cache /tmp/nginx \
-    && chmod -R 755 /tmp/nginx
+    && chown -R appuser:appuser storage bootstrap/cache
 
 # Install PHP dependencies (separate layer for cache efficiency)
 COPY composer.json composer.lock ./
@@ -50,10 +48,9 @@ COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-USER appuser
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget -qO- http://localhost:8080/up || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
+CMD ["/usr/local/bin/entrypoint.sh"]
